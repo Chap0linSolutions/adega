@@ -1,16 +1,24 @@
 import express from 'express';
 import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
 
-const app = express();
+import routes from './routes';
+import realtime from './realtime';
 
-app.use(cors());
 const PORT = 3000;
 
-app.get('/', (req, res) => {
-  res.send('Bem vindo à adega!');
-});
 
-app.listen(PORT, () => {
+const app = express();
+const server = http.createServer(app);
+app.use(cors());
+app.use(routes);
+
+const io = new Server(server, { cors: {origin: "*"}});
+
+realtime(io);
+
+server.listen(PORT, () => {
   console.log(
     'The application is listening ' + 'on port http://localhost:' + PORT
   );
