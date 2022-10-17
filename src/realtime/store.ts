@@ -1,9 +1,7 @@
 class Store {
   private static instance: Store;
   private data: any = {};
-  constructor() {
-
-  }
+  constructor() {}
   static getInstance() {
     if (!Store.instance) {
       Store.instance = new Store();
@@ -13,11 +11,11 @@ class Store {
   getData(key: string) {
     return this.data[key];
   }
-  setData(key: string, value: any, force: boolean = false){
-    if(force || !this.data[key]) {
+  setData(key: string, value: any, force: boolean = false) {
+    if (force || !this.data[key]) {
       this.data[key] = value;
       return;
     }
-    throw "property already set"
+    throw 'property already set';
   }
 }
