@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "build": "tsc",
     "dev": "tsnd --respawn src/index.ts",
-    "start": "node build/index.js"
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
