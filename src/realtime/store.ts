@@ -1,3 +1,12 @@
+export interface player {
+  //todo jogador ao entrar no lobby terá estas infos associadas
+  roomCode: string;
+  nickname: string;
+  avatarSeed: string;
+  beers: number;
+  socketID: string;
+}
+
 class Store {
   private static instance: Store;
   private data: any = {};
@@ -18,4 +27,12 @@ class Store {
     }
     throw 'property already set';
   }
+
+  rooms = new Map<string, player[]>([
+    ['ABCDEF', []],
+    ['XYZ123', []],
+    ['123456', []],
+  ]);
 }
+
+export default Store;
