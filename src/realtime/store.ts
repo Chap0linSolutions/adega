@@ -28,7 +28,10 @@ class Store {
     throw 'property already set';
   }
 
+  players: any = [];
+
   rooms = new Map<string, player[]>([
+    ['1', []], //sala do BangBang
     ['ABCDEF', []],
     ['XYZ123', []],
     ['123456', []],
