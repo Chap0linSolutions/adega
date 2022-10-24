@@ -53,16 +53,17 @@ class Realtime {
       player.time = payload.time;
       console.log(player.time);
 
-      const hasFired = players
+      const hasFired: boolean = players
         .map((p: any) => !!p.time)
         .reduce((ac: any, at: any) => ac && at);
       console.log(hasFired);
-      if (hasFired) {
+      if (hasFired) { 
         const winnerID = players.sort((a: any, b: any) => b.time - a.time)[0]
           .id;
         this.io
           .to('1')
           .emit('message', { message: 'bangbang_result', id: winnerID });
+        players = [];
       }
     }
   }
