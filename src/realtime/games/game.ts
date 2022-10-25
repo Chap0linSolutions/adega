@@ -1,5 +1,7 @@
 class Game {
-  constructor() {}
+  constructor() {
+    console.log("Game criado");
+  }
 }
 
 export default Game;
