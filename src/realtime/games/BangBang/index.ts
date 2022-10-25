@@ -5,3 +5,5 @@ class BangBang extends Game {
     super();
   }
 }
+
+export default BangBang;

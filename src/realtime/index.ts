@@ -165,6 +165,7 @@ class SocketConnection {
         this.io
           .to('1')
           .emit('message', { message: 'bangbang_result', id: winnerID });
+       this.runtimeStorage.players = [];
       }
     }
   }
