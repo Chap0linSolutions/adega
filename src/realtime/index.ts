@@ -41,6 +41,14 @@ class SocketConnection {
     this.socket.on('message', (value) => {
       this.handleMessage(value.message, value.room, value.payload);
     });
+
+    this.socket.on('begin-match', (roomCode, whoBegan) => {     //o dono da partida (whoBegan) é por enquanto identificado pelo id do socket
+      this.io.to(roomCode).emit('begin-match', whoBegan);
+    })
+
+    this.socket.on('selected-a-game', (roomCode, random) => {
+      this.io.to(roomCode).emit('selected-a-game', random);
+    })
   }
 
   joinRoom(roomCode: string) {
