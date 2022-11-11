@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    console.log("Game criado");
+    console.log('Game criado');
   }
 }
 
