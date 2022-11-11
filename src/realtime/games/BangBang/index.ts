@@ -1,9 +1,2 @@
-import Game from '../game';
-
-class BangBang extends Game {
-  constructor() {
-    super();
-  }
-}
-
+import { BangBang } from './BangBang';
 export default BangBang;

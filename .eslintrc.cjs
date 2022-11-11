@@ -3,10 +3,12 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   root: true,
-  overrides: [{
-    files: ["*.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    }
-  }]
+  overrides: [
+    {
+      files: ['*.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
 };

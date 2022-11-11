@@ -1,18 +1,27 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player } from './store';
+import { RoomContent } from './store';
 
 class SocketConnection {
   socket: Socket;
   io: Server;
   runtimeStorage: Store;
-  rooms: Map<string, player[]>;
+  rooms: Map<string, RoomContent>;
+  allPlayers: player[];
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
 
     this.runtimeStorage = Store.getInstance();
+
+    //adding room to Store for testing
+    if (!this.runtimeStorage.rooms.has('1')) {
+      this.runtimeStorage.rooms.set('1', Store.emptyRoom(this.io, '1'));
+    }
+
     this.rooms = this.runtimeStorage.rooms;
+    this.allPlayers = this.runtimeStorage.allPlayers;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
@@ -39,7 +48,7 @@ class SocketConnection {
     });
 
     this.socket.on('message', (value) => {
-      this.handleMessage(value.message, value.room, value.payload);
+      this.handleGameMessage(value.room, value.message, value.payload);
     });
   }
 
@@ -54,7 +63,8 @@ class SocketConnection {
   }
 
   createRoom(roomCode: string) {
-    this.rooms.set(roomCode, []);
+    const newRoom = Store.emptyRoom(this.io, roomCode);
+    this.rooms.set(roomCode, newRoom);
     this.socket.emit('create-room', `sala ${roomCode} criada com sucesso.`);
   }
 
@@ -70,21 +80,22 @@ class SocketConnection {
     let index = -1;
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
-    const players = this.rooms.get(npd.roomCode);
+    const currentRoom = this.rooms.get(npd.roomCode);
+    const players = currentRoom?.players;
 
-    console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
+    //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
 
     if (players) {
       players.forEach((p: player) => {
         //se já existir um player no jogo com o mesmo id de socket, não vamos adicionar novamente e sim atualizar o existente
-        if (p.socketID === this.socket.id) {
+        if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
         }
       });
 
       if (index >= 0) {
         players.splice(index, 1);
-        console.log(`atualizados os dados do jogador ${JSON.stringify(npd)}\n`);
+        console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
       } else {
         console.log(
           `adicionado os dados do jogador de ID ${
@@ -95,7 +106,7 @@ class SocketConnection {
 
       players.push(npd);
       this.rooms.delete(npd.roomCode);
-      this.rooms.set(npd.roomCode, players);
+      this.rooms.set(npd.roomCode, currentRoom);
 
       console.log(`players atualmente na sala:  ${JSON.stringify(players)}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
@@ -112,62 +123,28 @@ class SocketConnection {
     let targetRoom = '';
 
     for (const room of this.rooms) {
-      const players = room[1];
+      const players = room[1].players;
       players.forEach((p: player) => {
-        if (p.socketID === this.socket.id) {
+        if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`o jogador ${JSON.stringify(p)} saiu.\n`);
+          console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
-    this.rooms.get(targetRoom)?.splice(index, 1);
+    this.rooms.get(targetRoom)?.players.splice(index, 1);
     this.io
       .to(targetRoom)
-      .emit('lobby-update', JSON.stringify(this.rooms.get(targetRoom)));
+      .emit(
+        'lobby-update',
+        JSON.stringify(this.rooms.get(targetRoom)?.players)
+      );
   }
 
-  handleMessage(value: any, room: string, payload: any) {
+  handleGameMessage(room: string, value: any, payload: any) {
+    const currentGame = this.rooms.get(room)?.currentGame;
     console.log(`tag: ${value}\n`);
-    if (value === 'player_ready') {
-      if (
-        this.runtimeStorage.players.find(
-          (p: any) => p.id === this.socket.id
-        ) === undefined
-      ) {
-        this.runtimeStorage.players.push({
-          id: this.socket.id,
-        });
-      }
-
-      console.log('jogadores atualmente ');
-
-      if (this.runtimeStorage.players.length === 2) {
-        this.sendMessage('start_timer', '1');
-      }
-    }
-
-    if (value === 'shot') {
-      const player = this.runtimeStorage.players.find(
-        (p: any) => p.id === this.socket.id
-      );
-      player.time = payload.time;
-      console.log(player.time);
-
-      const hasFired = this.runtimeStorage.players
-        .map((p: any) => !!p.time)
-        .reduce((ac: any, at: any) => ac && at);
-      console.log(hasFired);
-      if (hasFired) {
-        const winnerID = this.runtimeStorage.players.sort(
-          (a: any, b: any) => b.time - a.time
-        )[0].id;
-        this.io
-          .to('1')
-          .emit('message', { message: 'bangbang_result', id: winnerID });
-       this.runtimeStorage.players = [];
-      }
-    }
+    currentGame?.handleMessage(this.socket.id, value, payload);
   }
 }
 
