@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Store, { player } from '../realtime/store';
+import Store from '../realtime/store';
 
 export default class RoomAccessController {
   async joinRoom(req: Request, res: Response) {

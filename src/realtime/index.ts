@@ -1,17 +1,28 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
+
 class SocketConnection {
   socket: Socket;
   io: Server;
   runtimeStorage: Store;
   rooms: Map<string, RoomContent>;
+  
+  allPlayers: player[];
+
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
 
     this.runtimeStorage = Store.getInstance();
+
+    //adding room to Store for testing
+    if (!this.runtimeStorage.rooms.has('1')) {
+      this.runtimeStorage.rooms.set('1', Store.emptyRoom(this.io, '1'));
+    }
+
     this.rooms = this.runtimeStorage.rooms;
+    this.allPlayers = this.runtimeStorage.allPlayers;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
@@ -54,9 +65,9 @@ class SocketConnection {
     });
 
     this.socket.on('message', (value) => {
-      this.handleGameMessage(value.room, value.message, value.payload);
-    });
-
+      this.handleGameMessage(value.room, value.message, value.payload);     //conflito aqui
+    })
+    
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
     });
@@ -95,6 +106,7 @@ class SocketConnection {
     const currentRoom = this.rooms.get(npd.roomCode);
     const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
+
 
     //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
 

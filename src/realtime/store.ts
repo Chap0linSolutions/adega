@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
 import Game from './games/game';
+
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
