@@ -40,10 +40,10 @@ class Store {
     throw 'property already set';
   }
 
-  static emptyRoom(io: Server, roomCode: string): RoomContent {
+  static emptyRoom(): RoomContent {
     return {
       players: [],
-      currentGame: new BangBang(io, roomCode),
+      currentGame: null
     };
   }
 }

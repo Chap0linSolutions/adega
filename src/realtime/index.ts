@@ -16,8 +16,8 @@ class SocketConnection {
     this.runtimeStorage = Store.getInstance();
 
     //adding room to Store for testing
-    if (!this.runtimeStorage.rooms.has('1')) {
-      this.runtimeStorage.rooms.set('1', Store.emptyRoom(this.io, '1'));
+    if (!this.runtimeStorage.rooms.has('123456')) {
+      this.runtimeStorage.rooms.set('123456', Store.emptyRoom());
     }
 
     this.rooms = this.runtimeStorage.rooms;
@@ -29,10 +29,6 @@ class SocketConnection {
     this.socket.on('join-room', (roomCode, callback) => {
       const reply = this.joinRoom(roomCode);
       callback(reply);
-    });
-
-    this.socket.on('create-room', (roomCode) => {
-      this.createRoom(roomCode);
     });
 
     this.socket.on('room-exists', (roomCode) => {
@@ -63,9 +59,16 @@ class SocketConnection {
   }
 
   createRoom(roomCode: string) {
-    const newRoom = Store.emptyRoom(this.io, roomCode);
-    this.rooms.set(roomCode, newRoom);
-    this.socket.emit('create-room', `sala ${roomCode} criada com sucesso.`);
+
+    let reply = `[ERROR]\nNão foi possível criar a sala ${roomCode}.`
+    console.log('Entrou Aqui')
+    if (this.rooms.has(roomCode)) {
+      reply = `Já existe uma sala registrada com esse código!`
+    } else {
+      this.rooms.set(roomCode, Store.emptyRoom());
+      reply = `Sala ${roomCode} criada com sucesso!`;
+    }
+    return reply;
   }
 
   verifyIfRoomExists(roomCode: string) {
@@ -133,6 +136,10 @@ class SocketConnection {
       });
     }
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+    if (this.rooms.get(targetRoom)?.players.length == 0) { 
+      console.log("Room empty! Deleting from room list...")
+      this.rooms.delete(targetRoom);
+    }
     this.io
       .to(targetRoom)
       .emit(
