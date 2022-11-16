@@ -1,29 +1,30 @@
+import { Server } from 'socket.io';
+import BangBang from './games/BangBang';
+import OEscolhido from './games/OEscolhido';
+import Game from './games/game';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
-  id: number;
+  playerID: number;
   roomCode: string;
+  currentlyPlaying: boolean;
   nickname: string;
   avatarSeed: string;
   beers: number;
   socketID: string;
 }
-export interface votingSession {
-  //para o jogo da votação precisamos saber quem votou e quantos votos cada um recebeu
-  nickname: string;
-  avatarSeed: string;
-  hasVotedIn: player | undefined;
-  votesReceived: number;
-}
-
-export interface mostVoted {
-  nickname: string;
-  avatarSeed: string;
-  votes: number;
+export interface RoomContent {
+  players: player[];
+  currentGame: Game | null;
 }
 
 class Store {
   private static instance: Store;
   private data: any = {};
+  public rooms: Map<string, RoomContent> = new Map([
+    ['123456', { players: [], currentGame: null }],
+  ]);
+  public allPlayers: player[] = [];
+
   static getInstance() {
     if (!Store.instance) {
       Store.instance = new Store();
@@ -41,17 +42,27 @@ class Store {
     throw 'property already set';
   }
 
-  players: any = [];
+  startGameOnRoom(roomCode: string, gameName: string, io: Server) {
+    let newGame = null;
+    if (gameName === 'O Escolhido') {
+      newGame = new OEscolhido(io, roomCode);
+    }
+    let currentRoom = this.rooms.get(roomCode);
+    if (currentRoom) {
+      currentRoom.currentGame = newGame;
+      return;
+    }
+    console.log(
+      `Erro! O jogo na sala ${roomCode} não pôde ser iniciado - this.rooms.get(roomCode) resultou em 'undefined'.`
+    );
+  }
 
-  rooms = new Map<string, player[]>([
-    ['1', []], //sala do BangBang
-    ['ABCDEF', []],
-    ['XYZ123', []],
-    ['123456', []],
-  ]);
-
-  //jogo da votação
-  voting = new Map<string, votingSession[]>();
+  static emptyRoom(io: Server, roomCode: string): RoomContent {
+    return {
+      players: [],
+      currentGame: null,
+    };
+  }
 }
 
 export default Store;

@@ -1,12 +1,10 @@
 import { Socket, Server } from 'socket.io';
-import Store, { player, votingSession, mostVoted } from './store';
-
+import Store, { player, RoomContent } from './store';
 class SocketConnection {
   socket: Socket;
   io: Server;
   runtimeStorage: Store;
-  rooms: Map<string, player[]>;
-  voting: Map<string, votingSession[]>;
+  rooms: Map<string, RoomContent>;
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
@@ -14,7 +12,6 @@ class SocketConnection {
 
     this.runtimeStorage = Store.getInstance();
     this.rooms = this.runtimeStorage.rooms;
-    this.voting = this.runtimeStorage.voting;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
@@ -37,7 +34,7 @@ class SocketConnection {
     });
 
     this.socket.on('lobby-update', (roomCode) => {
-      const players = JSON.stringify(this.rooms.get(roomCode));
+      const players = JSON.stringify(this.rooms.get(roomCode)?.players);
       this.io.to(roomCode).emit('lobby-update', players);
     });
 
@@ -45,27 +42,23 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('start-game', (value) => {
+      console.log(
+        `Sala ${value.roomCode} - solicitado o início do jogo ${value.gameName}.`
+      );
+      this.runtimeStorage.startGameOnRoom(
+        value.roomCode,
+        value.gameName,
+        this.io
+      );
+    });
+
     this.socket.on('message', (value) => {
-      this.handleMessage(value.message, value.room, value.payload);
+      this.handleGameMessage(value.room, value.message, value.payload);
     });
 
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
-    });
-
-    this.socket.on('voted-player', (value) => {
-      //jogo da votação - mudar para classe separada posteriormente
-      this.handleVote(value.roomCode, value.player);
-    });
-
-    this.socket.on('vote-results', (roomCode) => {
-      const votingSession = this.voting.get(roomCode);
-      if (votingSession) {
-        console.log(
-          `Sala ${roomCode} - O tempo da partida acabou. Contabilizando votos existentes...`
-        );
-        this.finishVoting(roomCode, votingSession);
-      }
     });
   }
 
@@ -81,7 +74,8 @@ class SocketConnection {
   }
 
   createRoom(roomCode: string) {
-    this.rooms.set(roomCode, []);
+    const newRoom = Store.emptyRoom(this.io, roomCode);
+    this.rooms.set(roomCode, newRoom);
     this.socket.emit('create-room', `sala ${roomCode} criada com sucesso.`);
   }
 
@@ -96,9 +90,10 @@ class SocketConnection {
   addPlayer(newPlayerData: string) {
     let index = -1;
     let beerCount = 0;
-    let npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
+    const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
-    const players = this.rooms.get(npd.roomCode);
+    const currentRoom = this.rooms.get(npd.roomCode);
+    const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
 
     //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
@@ -114,7 +109,7 @@ class SocketConnection {
 
       if (index >= 0) {
         players.splice(index, 1);
-        console.log(`atualizados os dados do jogador ${JSON.stringify(npd)}\n`);
+        console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
       } else {
         console.log(
           `adicionado os dados do jogador de ID ${
@@ -123,9 +118,13 @@ class SocketConnection {
         );
       }
 
-      players.push({ ...npd, beers: beerCount, id: playerID });
+      currentRoom.players.push({
+        ...npd,
+        beers: beerCount,
+        playerID: playerID,
+      });
       this.rooms.delete(npd.roomCode);
-      this.rooms.set(npd.roomCode, players);
+      this.rooms.set(npd.roomCode, currentRoom);
 
       //console.log(`players atualmente na sala:  ${JSON.stringify(players)}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
@@ -142,169 +141,31 @@ class SocketConnection {
     let targetRoom = '';
 
     for (const room of this.rooms) {
-      const players = room[1];
+      const players = room[1].players;
       players.forEach((p: player) => {
-        if (p.socketID === this.socket.id) {
+        if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`o jogador ${JSON.stringify(p)} saiu.\n`);
+          console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
-    this.rooms.get(targetRoom)?.splice(index, 1);
+    this.rooms.get(targetRoom)?.players.splice(index, 1);
     this.io
       .to(targetRoom)
-      .emit('lobby-update', JSON.stringify(this.rooms.get(targetRoom)));
-  }
-
-  handleMessage(value: any, room: string, payload: any) {
-    console.log(`tag: ${value}\n`);
-    if (value === 'player_ready') {
-      if (
-        this.runtimeStorage.players.find(
-          (p: any) => p.id === this.socket.id
-        ) === undefined
-      ) {
-        this.runtimeStorage.players.push({
-          id: this.socket.id,
-        });
-      }
-
-      if (this.runtimeStorage.players.length === 2) {
-        this.sendMessage('start_timer', '1');
-      }
-    }
-
-    if (value === 'shot') {
-      const player = this.runtimeStorage.players.find(
-        (p: any) => p.id === this.socket.id
+      .emit(
+        'lobby-update',
+        JSON.stringify(this.rooms.get(targetRoom)?.players)
       );
-      player.time = payload.time;
-      console.log(player.time);
-
-      const hasFired = this.runtimeStorage.players
-        .map((p: any) => !!p.time)
-        .reduce((ac: any, at: any) => ac && at);
-      console.log(hasFired);
-      if (hasFired) {
-        const winnerID = this.runtimeStorage.players.sort(
-          (a: any, b: any) => b.time - a.time
-        )[0].id;
-        this.io
-          .to('1')
-          .emit('message', { message: 'bangbang_result', id: winnerID });
-        this.runtimeStorage.players = [];
-      }
-    }
   }
 
-  //VOTAÇÃO/////////////////////////////////////////////////////////////////////////////////////////////////////////
+  handleGameMessage(room: string, value: any, payload: any) {
+    const currentGame = this.rooms.get(room)?.currentGame;
+    currentGame?.handleMessage(this.socket.id, value, payload);
+  }
 
-  handleMoving(roomCode: string, destination: string) {
-    if (destination === '/OEscolhido') {
-      this.beginVoting(roomCode);
-    }
+  handleMoving(roomCode: string, destination: string | number) {
     this.io.to(roomCode).emit('room-is-moving-to', destination);
-  }
-
-  beginVoting(roomCode: string) {
-    console.log(
-      `Sala ${roomCode} - o jogo 'O Escolhido' foi iniciado. Todos os players desta sala tiveram seus dados de votação zerados.`
-    );
-    this.voting.delete(roomCode);
-
-    const players: votingSession[] = [];
-    this.rooms.get(roomCode)?.forEach((player) => {
-      players.push({
-        nickname: player.nickname,
-        avatarSeed: player.avatarSeed,
-        hasVotedIn: undefined,
-        votesReceived: 0,
-      });
-    });
-
-    console.log(`${players.length} jogadores se encontram neste jogo.\n`);
-    this.voting.set(roomCode, players);
-  }
-
-  handleVote(roomCode: string, votedPlayer: string) {
-    //contabilização dos votos
-    const vote = JSON.parse(votedPlayer);
-    const whoVoted = this.rooms
-      .get(roomCode)
-      ?.find((player) => player.socketID === this.socket.id);
-    const session = this.voting.get(roomCode);
-
-    session?.forEach((player) => {
-      if (
-        player.nickname === whoVoted?.nickname &&
-        player.avatarSeed === whoVoted?.avatarSeed
-      ) {
-        player.hasVotedIn = vote;
-      }
-      if (
-        player.nickname === vote.nickname &&
-        player.avatarSeed === vote.avatarSeed
-      ) {
-        player.votesReceived += 1;
-        console.log(
-          `Sala ${roomCode} - ${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
-        );
-      }
-    });
-
-    let allVoted = true;
-    session?.forEach((player) => {
-      if (player.hasVotedIn === undefined) {
-        console.log(`Sala ${roomCode} - Ainda há jogadores que não votaram.`);
-        allVoted = false; //se ainda faltar alguém pra votar, paramos nesse return
-      }
-    });
-
-    if (allVoted) {
-      this.finishVoting(roomCode, session as votingSession[]); //se todos já votaram, por outro lado, prosseguimos com os resultados
-      this.voting.delete(roomCode);
-    }
-  }
-
-  finishVoting(roomCode: string, session: votingSession[]) {
-    let highestVoteCount = 0;
-    const mostVotedPlayers: mostVoted[] = [];
-
-    session.forEach((player) => {
-      //encontra maior número de votos
-      if (player.votesReceived > highestVoteCount) {
-        highestVoteCount = player.votesReceived;
-      }
-    });
-
-    session.forEach((player) => {
-      //inclui os mais votados no respectivo vetor
-      if (player.votesReceived === highestVoteCount) {
-        mostVotedPlayers.push({
-          nickname: player.nickname,
-          avatarSeed: player.avatarSeed,
-          votes: player.votesReceived,
-        });
-      }
-    });
-
-    const playerList = this.rooms.get(roomCode);
-    mostVotedPlayers.forEach((mostVotedPlayer) => {
-      playerList?.forEach((player) => {
-        if (
-          player.nickname === mostVotedPlayer.nickname &&
-          player.avatarSeed === mostVotedPlayer.avatarSeed
-        ) {
-          player.beers += 1;
-        }
-      });
-    });
-
-    console.log(
-      `Sala ${roomCode} - Todos os votos da sala foram contabilizados. Enviando resultado para os jogadores.`
-    );
-    this.io.to(roomCode).emit('vote-results', JSON.stringify(mostVotedPlayers)); //não é absolutamente necessário usar o stringify, mas pode ser boa prática
   }
 }
 
@@ -316,8 +177,5 @@ function realtime(io: Server) {
 
 export default realtime;
 
-// setTimeout(() => {
-//   const mostVotedPlayer = [{...player, votes: 20}]
-//   console.log('enviados os resultados da votação.');
-//   this.io.to(roomCode).emit('vote-results', JSON.stringify(mostVotedPlayer));   //a resposta aos clientes é o apelido, avatar e quantidade de votos do jogador mais votado
-// }, 5000);
+//on handleGameMessage:
+//    console.log(`tag: ${value}\n`);
