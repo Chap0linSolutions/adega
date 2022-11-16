@@ -133,6 +133,7 @@ class SocketConnection {
       });
     }
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+    this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     this.io
       .to(targetRoom)
       .emit(

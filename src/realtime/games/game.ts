@@ -16,6 +16,7 @@ abstract class Game {
   }
 
   abstract handleMessage(id: any, value: any, payload: any): void;
+  abstract handleDisconnect(id: string): void;
 }
 
 export default Game;
