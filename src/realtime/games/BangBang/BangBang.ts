@@ -36,7 +36,7 @@ class BangBang extends Game {
         return p.socketID === id;
       });
 
-    if (player) {
+    if (!player) return;
       this.numberOfPlayers += 1;
 
       // TODO: have playerGameData be a copy of room.players initialised at the constructor
@@ -46,7 +46,7 @@ class BangBang extends Game {
         seed: player.avatarSeed,
         shotTime: 0,
       });
-    }
+    
 
     const playersOnRoom = this.runtimeStorage.rooms.get(this.runningOnRoom)
       ?.players.length;
@@ -100,7 +100,8 @@ class BangBang extends Game {
   handleDisconnect(id: string): void {
     const index = this.playerGameData.findIndex((p) => p.id === id);
     this.playerGameData.splice(index, 1);
-
+    if (this.playerGameData.length === 0) return;
+    
     const hasFired = this.playerGameData
       .map((p: bangbangData) => !!p.shotTime)
       .reduce((ac: any, at: any) => ac && at);
