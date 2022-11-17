@@ -17,7 +17,7 @@ class SocketConnection {
 
     //adding room to Store for testing
     if (!this.runtimeStorage.rooms.has('1')) {
-      this.runtimeStorage.rooms.set('1', Store.emptyRoom(this.io, '1'));
+      this.runtimeStorage.rooms.set('1', Store.emptyRoom());
     }
 
     this.rooms = this.runtimeStorage.rooms;
@@ -47,8 +47,27 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('roulette-number-is', (value) => {
+      this.io.to(value.roomCode).emit('roulette-number-is', value.number);
+    });
+
+    this.socket.on('start-game', (value) => {
+      console.log(
+        `Sala ${value.roomCode} - solicitado o início do jogo ${value.gameName}.`
+      );
+      this.runtimeStorage.startGameOnRoom(
+        value.roomCode,
+        value.gameName,
+        this.io
+      );
+    });
+
     this.socket.on('message', (value) => {
       this.handleGameMessage(value.room, value.message, value.payload);
+    });
+
+    this.socket.on('move-room-to', (value) => {
+      this.handleMoving(value.roomCode, value.destination);
     });
   }
 
@@ -63,7 +82,7 @@ class SocketConnection {
   }
 
   createRoom(roomCode: string) {
-    const newRoom = Store.emptyRoom(this.io, roomCode);
+    const newRoom = Store.emptyRoom();
     this.rooms.set(roomCode, newRoom);
     this.socket.emit('create-room', `sala ${roomCode} criada com sucesso.`);
   }
@@ -82,6 +101,7 @@ class SocketConnection {
 
     const currentRoom = this.rooms.get(npd.roomCode);
     const players = currentRoom?.players;
+    let playerID = Math.floor(10000 * Math.random());
 
     //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
 
@@ -145,6 +165,13 @@ class SocketConnection {
     const currentGame = this.rooms.get(room)?.currentGame;
     console.log(`tag: ${value}\n`);
     currentGame?.handleMessage(this.socket.id, value, payload);
+  }
+
+  handleMoving(roomCode: string, destination: string | number) {
+    console.log(
+      `Solicitado o movimento da sala para o destino: ${destination}`
+    );
+    this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
 }
 

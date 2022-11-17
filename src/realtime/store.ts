@@ -40,7 +40,30 @@ class Store {
     throw 'property already set';
   }
 
-  static emptyRoom(io: Server, roomCode: string): RoomContent {
+  startGameOnRoom(roomCode: string, gameName: string, io: Server) {
+    let newGame = null;
+    switch (gameName) {
+      case 'O Escolhido':
+        //newGame = new OEscolhido(io, roomCode);
+        break;
+      case 'Bang Bang':
+        newGame = new BangBang(io, roomCode);
+        break;
+      default:
+        console.log('Erro! O jogo solicitado ainda não foi implementado.');
+        return;
+    }
+    let currentRoom = this.rooms.get(roomCode);
+    if (currentRoom) {
+      currentRoom.currentGame = newGame;
+      return;
+    }
+    console.log(
+      `Erro! O jogo na sala ${roomCode} não pôde ser iniciado - this.rooms.get(roomCode) resultou em 'undefined'.`
+    );
+  }
+
+  static emptyRoom(): RoomContent {
     return {
       players: [],
       currentGame: new BangBang(io, roomCode),
