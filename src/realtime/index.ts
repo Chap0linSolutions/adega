@@ -15,11 +15,6 @@ class SocketConnection {
 
     this.runtimeStorage = Store.getInstance();
 
-    //adding room to Store for testing
-    if (!this.runtimeStorage.rooms.has('1')) {
-      this.runtimeStorage.rooms.set('1', Store.emptyRoom());
-    }
-
     this.rooms = this.runtimeStorage.rooms;
     this.allPlayers = this.runtimeStorage.allPlayers;
 
