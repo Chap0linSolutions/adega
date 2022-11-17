@@ -20,7 +20,9 @@ export interface RoomContent {
 class Store {
   private static instance: Store;
   private data: any = {};
-  public rooms: Map<string, RoomContent> = new Map();
+  public rooms: Map<string, RoomContent> = new Map([
+    ['123456', Store.emptyRoom()],
+  ]);
   public allPlayers: player[] = [];
 
   static getInstance() {
@@ -66,7 +68,7 @@ class Store {
   static emptyRoom(): RoomContent {
     return {
       players: [],
-      currentGame: new BangBang(io, roomCode),
+      currentGame: null,
     };
   }
 }
