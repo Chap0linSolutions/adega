@@ -7,12 +7,10 @@ class SocketConnection {
   io: Server;
   runtimeStorage: Store;
   rooms: Map<string, RoomContent>;
-  allPlayers: player[];
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
-
     this.runtimeStorage = Store.getInstance();
 
     //adding room to Store for testing
@@ -21,7 +19,6 @@ class SocketConnection {
     }
 
     this.rooms = this.runtimeStorage.rooms;
-    this.allPlayers = this.runtimeStorage.allPlayers;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
@@ -59,11 +56,10 @@ class SocketConnection {
   }
 
   createRoom(roomCode: string) {
-
-    let reply = `[ERROR]\nNão foi possível criar a sala ${roomCode}.`
-    console.log('Entrou Aqui')
+    let reply = `[ERROR]\nNão foi possível criar a sala ${roomCode}.`;
+    console.log('Entrou Aqui');
     if (this.rooms.has(roomCode)) {
-      reply = `Já existe uma sala registrada com esse código!`
+      reply = `Já existe uma sala registrada com esse código!`;
     } else {
       this.rooms.set(roomCode, Store.emptyRoom());
       reply = `Sala ${roomCode} criada com sucesso!`;
@@ -136,8 +132,8 @@ class SocketConnection {
       });
     }
     this.rooms.get(targetRoom)?.players.splice(index, 1);
-    if (this.rooms.get(targetRoom)?.players.length == 0) { 
-      console.log("Room empty! Deleting from room list...")
+    if (this.rooms.get(targetRoom)?.players.length == 0) {
+      console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
     }
     this.io
