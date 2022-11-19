@@ -42,8 +42,19 @@ class SocketConnection {
       this.disconnect();
     });
 
-    this.socket.on('roulette-number-is', (value) => {
-      this.io.to(value.roomCode).emit('roulette-number-is', value.number);
+    this.socket.on('games-update', (roomCode) => {
+      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      this.socket.emit('games-update', this.runtimeStorage.allGames);
+    });
+
+    this.socket.on('roulette-number-is', (roomCode) => {
+      const selectedNumber =
+        Math.floor(this.runtimeStorage.allGames.length * Math.random()) + 1;
+      this.io.to(roomCode).emit('roulette-number-is', selectedNumber);
+      setTimeout(() => {
+        this.handleMoving(roomCode, '/BangBang');
+        this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      }, 5000);
     });
 
     this.socket.on('start-game', (value) => {

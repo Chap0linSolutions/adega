@@ -24,6 +24,13 @@ class Store {
     ['123456', Store.emptyRoom()],
   ]);
   public allPlayers: player[] = [];
+  public allGames: string[] = [
+    'Eu Nunca',
+    'Roleta',
+    'Vrum',
+    'Bicho Bebe',
+    'Medusa',
+  ];
 
   static getInstance() {
     if (!Store.instance) {
