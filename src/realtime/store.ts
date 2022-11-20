@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import Game from './games/game';
+import { OptionsType, defaultGameList } from './games/GameOptions';
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -15,6 +16,7 @@ export interface player {
 export interface RoomContent {
   players: player[];
   currentGame: Game | null;
+  options: OptionsType;
 }
 
 class Store {
@@ -24,13 +26,6 @@ class Store {
     ['123456', Store.emptyRoom()],
   ]);
   public allPlayers: player[] = [];
-  public allGames: string[] = [
-    'Eu Nunca',
-    'Roleta',
-    'Vrum',
-    'Bicho Bebe',
-    'Medusa',
-  ];
 
   static getInstance() {
     if (!Store.instance) {
@@ -76,6 +71,9 @@ class Store {
     return {
       players: [],
       currentGame: null,
+      options: {
+        gamesList: defaultGameList
+      }
     };
   }
 }

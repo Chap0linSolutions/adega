@@ -1,11 +1,13 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player } from './store';
 import { RoomContent } from './store';
+import { gameList } from './games/GameOptions';
 
 class SocketConnection {
   socket: Socket;
   io: Server;
   runtimeStorage: Store;
+  currentRoom?: RoomContent;
   rooms: Map<string, RoomContent>;
   allPlayers: player[];
 
@@ -44,12 +46,14 @@ class SocketConnection {
 
     this.socket.on('games-update', (roomCode) => {
       console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
-      this.socket.emit('games-update', this.runtimeStorage.allGames);
+      this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
-    this.socket.on('roulette-number-is', (roomCode) => {
+    this.socket.on('roulette-number-is', (roomCode: string) => {
+      if(!this.rooms.get(roomCode)) return;
+
       const selectedNumber =
-        Math.floor(this.runtimeStorage.allGames.length * Math.random()) + 1;
+        Math.floor(this.rooms.get(roomCode)!.options.gamesList.length * Math.random()) + 1;
       this.io.to(roomCode).emit('roulette-number-is', selectedNumber);
       setTimeout(() => {
         this.handleMoving(roomCode, '/BangBang');
@@ -82,6 +86,7 @@ class SocketConnection {
     let reply = 'a sala não existe.';
     if (this.rooms.has(roomCode)) {
       this.socket.join(roomCode);
+      this.currentRoom = this.rooms.get(roomCode);
       reply = `ingressou na sala ${roomCode}.`;
     }
     return reply;
