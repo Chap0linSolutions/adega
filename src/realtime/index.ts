@@ -117,14 +117,8 @@ class SocketConnection {
       });
 
       if (index >= 0) {
+        //removendo dados antigos para colocar os novos no lugar (no caso de ser atualização do player)
         players.splice(index, 1);
-        //console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
-      } else {
-        // console.log(
-        //   `adicionado os dados do jogador de ID ${
-        //     this.socket.id
-        //   } --> ${JSON.stringify(npd)}\n`
-        // );
       }
 
       players.push(npd);
@@ -134,7 +128,7 @@ class SocketConnection {
       const playersNames: string[] = [];
       players.forEach((player) => playersNames.push(` ${player.nickname}`));
 
-      //console.log(`players atualmente na sala:${playersNames}\n`);
+      console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
@@ -184,42 +178,27 @@ class SocketConnection {
     const room = this.rooms.get(roomCode);
     if (!room) return;
 
-    let possiblyNextGames: { name: string; index: number }[] = [];
-    let index = 0;
-
-    room.options.gamesList.forEach((game) => {
-      if (game.counter < 4) {
-        possiblyNextGames.push({ name: game.name, index: index });
-      }
-      index += 1;
-    });
-
-    if (possiblyNextGames.length === 0) {
-      console.log('Todos os jogos já foram 4x. Zerando os contadores...');
-      index = 0;
-      possiblyNextGames = [];
-      room.options.gamesList.forEach((game) => {
-        game.counter = 0;
-        if (game.name !== room.lastGameName) {
-          possiblyNextGames.push({ name: game.name, index: index });
-        }
-        index += 1;
-      });
-    } else if (possiblyNextGames.length > 1) {
-      possiblyNextGames = possiblyNextGames.filter(
-        (game) => game.name !== room.lastGameName
-      );
+    if (!room.options.gamesList.find((game) => game.counter === 0)) {
+      //checkToLower
+      console.log('Todos os jogos com contador > 0.');
+      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
     }
 
-    const selectedGameNumber = possiblyNextGames.at(
-      Math.floor(Math.random() * possiblyNextGames.length)
-    )!.index;
-    room.options.gamesList.at(selectedGameNumber)!.counter += 1;
-    room.lastGameName = room.options.gamesList.at(selectedGameNumber)!.name;
+    const gamesList = room?.options.gamesList;
+    const drawableOptions = gamesList.filter((game) => game.counter < 4); //filtra jogos que já saíram 4x
+    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
+    const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
 
+    const selectedGame = gamesList.find((game) => game.name === gameDraw)!;
+    const selectedGameNumber = gamesList.indexOf(selectedGame);
+
+    room.options.gamesList[selectedGameNumber].counter += 1;
     this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+    console.log(
+      `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
+    );
+
     setTimeout(() => {
-      //this.handleMoving(roomCode, '/Lobby');
       this.handleMoving(roomCode, '/BangBang');
       this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
     }, 5000);
