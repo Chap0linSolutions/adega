@@ -37,16 +37,15 @@ class BangBang extends Game {
       });
 
     if (!player) return;
-      this.numberOfPlayers += 1;
+    this.numberOfPlayers += 1;
 
-      // TODO: have playerGameData be a copy of room.players initialised at the constructor
-      this.playerGameData.push({
-        id: player.socketID,
-        nickname: player.nickname,
-        seed: player.avatarSeed,
-        shotTime: 0,
-      });
-    
+    // TODO: have playerGameData be a copy of room.players initialised at the constructor
+    this.playerGameData.push({
+      id: player.socketID,
+      nickname: player.nickname,
+      seed: player.avatarSeed,
+      shotTime: 0,
+    });
 
     const playersOnRoom = this.runtimeStorage.rooms.get(this.runningOnRoom)
       ?.players.length;
@@ -71,14 +70,16 @@ class BangBang extends Game {
       player.shotTime = payload.time;
       console.log(`Player ${player.id}'s time: ${player.shotTime}`);
 
-      const playersRanking = this.playerGameData.filter((p) => !!p.shotTime)
-        .sort(
-          (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
-        );
+      const playersRanking = this.playerGameData
+        .filter((p) => !!p.shotTime)
+        .sort((a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime);
 
       this.io
         .to(this.runningOnRoom)
-        .emit('message', { message: 'bangbang_result', ranking: playersRanking });
+        .emit('message', {
+          message: 'bangbang_result',
+          ranking: playersRanking,
+        });
 
       const hasFired = this.playerGameData
         .map((p: bangbangData) => !!p.shotTime)
@@ -89,7 +90,10 @@ class BangBang extends Game {
       if (hasFired) {
         this.io
           .to(this.runningOnRoom)
-          .emit('message', { message: 'bangbang_ranking', ranking: playersRanking });
+          .emit('message', {
+            message: 'bangbang_ranking',
+            ranking: playersRanking,
+          });
 
         this.playerGameData = [];
         this.numberOfPlayers = 0;
@@ -101,7 +105,7 @@ class BangBang extends Game {
     const index = this.playerGameData.findIndex((p) => p.id === id);
     this.playerGameData.splice(index, 1);
     if (this.playerGameData.length === 0) return;
-    
+
     const hasFired = this.playerGameData
       .map((p: bangbangData) => !!p.shotTime)
       .reduce((ac: any, at: any) => ac && at);
@@ -114,7 +118,10 @@ class BangBang extends Game {
 
       this.io
         .to(this.runningOnRoom)
-        .emit('message', { message: 'bangbang_ranking', ranking: playersRanking });
+        .emit('message', {
+          message: 'bangbang_ranking',
+          ranking: playersRanking,
+        });
 
       this.playerGameData = [];
       this.numberOfPlayers = 0;
