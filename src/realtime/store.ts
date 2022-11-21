@@ -16,6 +16,7 @@ export interface player {
 export interface RoomContent {
   players: player[];
   currentGame: Game | null;
+  lastGameName: string | null;
   options: OptionsType;
 }
 
@@ -71,9 +72,10 @@ class Store {
     return {
       players: [],
       currentGame: null,
+      lastGameName: null,
       options: {
-        gamesList: defaultGameList
-      }
+        gamesList: defaultGameList,
+      },
     };
   }
 }

@@ -45,20 +45,12 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
     this.socket.on('roulette-number-is', (roomCode: string) => {
-      if(!this.rooms.get(roomCode)) return;
-
-      const selectedNumber =
-        Math.floor(this.rooms.get(roomCode)!.options.gamesList.length * Math.random()) + 1;
-      this.io.to(roomCode).emit('roulette-number-is', selectedNumber);
-      setTimeout(() => {
-        this.handleMoving(roomCode, '/BangBang');
-        this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
-      }, 5000);
+      this.handleNextGameSelection(roomCode);
     });
 
     this.socket.on('start-game', (value) => {
@@ -82,7 +74,7 @@ class SocketConnection {
   }
 
   joinRoom(roomCode: string) {
-    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
+    //console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     if (this.rooms.has(roomCode)) {
       this.socket.join(roomCode);
@@ -126,26 +118,29 @@ class SocketConnection {
 
       if (index >= 0) {
         players.splice(index, 1);
-        console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
+        //console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
       } else {
-        console.log(
-          `adicionado os dados do jogador de ID ${
-            this.socket.id
-          } --> ${JSON.stringify(npd)}\n`
-        );
+        // console.log(
+        //   `adicionado os dados do jogador de ID ${
+        //     this.socket.id
+        //   } --> ${JSON.stringify(npd)}\n`
+        // );
       }
 
       players.push(npd);
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
 
-      console.log(`players atualmente na sala:  ${JSON.stringify(players)}\n`);
+      const playersNames: string[] = [];
+      players.forEach((player) => playersNames.push(` ${player.nickname}`));
+
+      console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
 
   sendMessage(message: string, room: string) {
-    console.log('hey\n', room, message);
+    //console.log('hey\n', room, message);
     this.io.to(room).emit('message', { message, room });
   }
 
@@ -159,7 +154,7 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`o jogador ${p.nickname} saiu.\n`);
+          //console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
@@ -174,15 +169,72 @@ class SocketConnection {
 
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
-    console.log(`tag: ${value}\n`);
+    //console.log(`tag: ${value}\n`);
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    console.log(
-      `Solicitado o movimento da sala para o destino: ${destination}`
-    );
+    // console.log(
+    //   `Solicitado o movimento da sala para o destino: ${destination}`
+    // );
     this.io.to(roomCode).emit('room-is-moving-to', destination);
+  }
+
+  handleNextGameSelection(roomCode: string) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    const gamesThatWent4Times = room.options.gamesList.filter(
+      (game) => game.counter === 4
+    );
+
+    if (gamesThatWent4Times.length === room.options.gamesList.length) {
+      console.log(
+        `Sala ${roomCode} - Todos os jogos da roleta já foram selecionados 4 vezes. Zerando contadores...`
+      );
+      room.options.gamesList.forEach((game) => (game.counter = 0));
+    }
+
+    let selectedGameNumber;
+    let selectedGameName;
+
+    while (true) {
+      selectedGameNumber = Math.floor(
+        room.options.gamesList.length * Math.random()
+      );
+      selectedGameName = room.options.gamesList.at(selectedGameNumber)?.name!;
+      console.log(
+        `Sala ${roomCode} - Jogo selecionado: ${selectedGameName} | Jogo anterior: ${room.lastGameName}`
+      );
+
+      if (room.currentGame === null) {
+        console.log('É o primeiro jogo da rodada.');
+        room.lastGameName = selectedGameName;
+        break;
+      } else if (selectedGameName !== room.lastGameName) {
+        const counter = room.options.gamesList.at(selectedGameNumber)!.counter;
+        if (counter === 4) {
+          console.log(
+            'O jogo selecionado já foi 4 vezes. Refazendo o sorteio...'
+          );
+          continue;
+        }
+        room.options.gamesList.at(selectedGameNumber)!.counter += 1;
+        room.lastGameName = selectedGameName;
+        console.log('');
+        break;
+      }
+      console.log(
+        'O jogo selecionado é o mesmo de antes. Refazendo o sorteio...'
+      );
+    }
+
+    this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+    setTimeout(() => {
+      this.handleMoving(roomCode, '/Lobby');
+      this.handleMoving(roomCode, '/BangBang');
+      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+    }, 5000);
   }
 }
 
