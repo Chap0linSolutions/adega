@@ -134,7 +134,7 @@ class SocketConnection {
       const playersNames: string[] = [];
       players.forEach((player) => playersNames.push(` ${player.nickname}`));
 
-      console.log(`players atualmente na sala:${playersNames}\n`);
+      //console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
@@ -184,54 +184,42 @@ class SocketConnection {
     const room = this.rooms.get(roomCode);
     if (!room) return;
 
-    const gamesThatWent4Times = room.options.gamesList.filter(
-      (game) => game.counter === 4
-    );
+    let possiblyNextGames: { name: string; index: number }[] = [];
+    let index = 0;
 
-    if (gamesThatWent4Times.length === room.options.gamesList.length) {
-      console.log(
-        `Sala ${roomCode} - Todos os jogos da roleta já foram selecionados 4 vezes. Zerando contadores...`
-      );
-      room.options.gamesList.forEach((game) => (game.counter = 0));
-    }
-
-    let selectedGameNumber;
-    let selectedGameName;
-
-    while (true) {
-      selectedGameNumber = Math.floor(
-        room.options.gamesList.length * Math.random()
-      );
-      selectedGameName = room.options.gamesList.at(selectedGameNumber)?.name!;
-      console.log(
-        `Sala ${roomCode} - Jogo selecionado: ${selectedGameName} | Jogo anterior: ${room.lastGameName}`
-      );
-
-      if (room.currentGame === null) {
-        console.log('É o primeiro jogo da rodada.');
-        room.lastGameName = selectedGameName;
-        break;
-      } else if (selectedGameName !== room.lastGameName) {
-        const counter = room.options.gamesList.at(selectedGameNumber)!.counter;
-        if (counter === 4) {
-          console.log(
-            'O jogo selecionado já foi 4 vezes. Refazendo o sorteio...'
-          );
-          continue;
-        }
-        room.options.gamesList.at(selectedGameNumber)!.counter += 1;
-        room.lastGameName = selectedGameName;
-        console.log('');
-        break;
+    room.options.gamesList.forEach((game) => {
+      if (game.counter < 4) {
+        possiblyNextGames.push({ name: game.name, index: index });
       }
-      console.log(
-        'O jogo selecionado é o mesmo de antes. Refazendo o sorteio...'
+      index += 1;
+    });
+
+    if (possiblyNextGames.length === 0) {
+      console.log('Todos os jogos já foram 4x. Zerando os contadores...');
+      index = 0;
+      possiblyNextGames = [];
+      room.options.gamesList.forEach((game) => {
+        game.counter = 0;
+        if (game.name !== room.lastGameName) {
+          possiblyNextGames.push({ name: game.name, index: index });
+        }
+        index += 1;
+      });
+    } else if (possiblyNextGames.length > 1) {
+      possiblyNextGames = possiblyNextGames.filter(
+        (game) => game.name !== room.lastGameName
       );
     }
+
+    const selectedGameNumber = possiblyNextGames.at(
+      Math.floor(Math.random() * possiblyNextGames.length)
+    )!.index;
+    room.options.gamesList.at(selectedGameNumber)!.counter += 1;
+    room.lastGameName = room.options.gamesList.at(selectedGameNumber)!.name;
 
     this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
     setTimeout(() => {
-      this.handleMoving(roomCode, '/Lobby');
+      //this.handleMoving(roomCode, '/Lobby');
       this.handleMoving(roomCode, '/BangBang');
       this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
     }, 5000);
