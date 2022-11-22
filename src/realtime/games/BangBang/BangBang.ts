@@ -63,8 +63,6 @@ class BangBang extends Game {
 
   // Gameplay
   handleShot(id: string, payload: any) {
-    console.log(this.runtimeStorage.allPlayers);
-    console.log(id);
     const player = this.playerGameData.find((p: bangbangData) => p.id === id);
 
     if (player) {

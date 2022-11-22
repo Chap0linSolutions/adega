@@ -1,5 +1,3 @@
-import { Server } from 'socket.io';
-import BangBang from './games/BangBang';
 import Game from './games/game';
 import { OptionsType, defaultGameList } from './games/GameOptions';
 
@@ -23,11 +21,11 @@ export interface RoomContent {
 class Store {
   private static instance: Store;
   private data: any = {};
+
   public rooms: Map<string, RoomContent> = new Map([
     ['123456', Store.emptyRoom()],
   ]);
-  public allPlayers: player[] = [];
-
+  
   static getInstance() {
     if (!Store.instance) {
       Store.instance = new Store();
@@ -67,7 +65,7 @@ class Store {
       `Erro! O jogo na sala ${roomCode} não pôde ser iniciado - this.rooms.get(roomCode) resultou em 'undefined'.`
     );
   }
-
+  
   static emptyRoom(): RoomContent {
     return {
       players: [],

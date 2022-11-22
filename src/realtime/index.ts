@@ -9,16 +9,13 @@ class SocketConnection {
   runtimeStorage: Store;
   currentRoom?: RoomContent;
   rooms: Map<string, RoomContent>;
-  allPlayers: player[];
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
-
     this.runtimeStorage = Store.getInstance();
 
     this.rooms = this.runtimeStorage.rooms;
-    this.allPlayers = this.runtimeStorage.allPlayers;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
@@ -26,10 +23,6 @@ class SocketConnection {
     this.socket.on('join-room', (roomCode, callback) => {
       const reply = this.joinRoom(roomCode);
       callback(reply);
-    });
-
-    this.socket.on('create-room', (roomCode) => {
-      this.createRoom(roomCode);
     });
 
     this.socket.on('room-exists', (roomCode) => {
@@ -82,12 +75,6 @@ class SocketConnection {
       reply = `ingressou na sala ${roomCode}.`;
     }
     return reply;
-  }
-
-  createRoom(roomCode: string) {
-    const newRoom = Store.emptyRoom();
-    this.rooms.set(roomCode, newRoom);
-    this.socket.emit('create-room', `sala ${roomCode} criada com sucesso.`);
   }
 
   verifyIfRoomExists(roomCode: string) {
@@ -153,6 +140,10 @@ class SocketConnection {
       });
     }
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+    if (this.rooms.get(targetRoom)?.players.length == 0) {
+      console.log('Room empty! Deleting from room list...');
+      this.rooms.delete(targetRoom);
+    }
     this.io
       .to(targetRoom)
       .emit(
