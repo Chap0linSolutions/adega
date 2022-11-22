@@ -15,10 +15,12 @@ class BangBang extends Game {
   constructor(io: Server, room: string) {
     super(io, room);
     this.playerGameData = [];
+    console.log('Bang Bang!');
   }
 
   handleMessage(id: any, value: any, payload: any) {
     if (value === 'player_ready') {
+      console.log('Player ready');
       this.startGame(id);
     }
 
@@ -62,8 +64,6 @@ class BangBang extends Game {
 
   // Gameplay
   handleShot(id: string, payload: any) {
-    console.log(this.runtimeStorage.allPlayers);
-    console.log(id);
     const player = this.playerGameData.find((p: bangbangData) => p.id === id);
 
     if (player) {
