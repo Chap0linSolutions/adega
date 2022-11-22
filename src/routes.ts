@@ -13,6 +13,7 @@ routes.get('/', (req, res) => {
 });
 
 routes.get('/roomCode/:code', roomAccessController.joinRoom);
+routes.put('/createRoom', roomAccessController.createRoom);
 
 routes.get('/example', exampleController.index);
 

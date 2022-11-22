@@ -1,5 +1,3 @@
-import { Server } from 'socket.io';
-import BangBang from './games/BangBang';
 import Game from './games/game';
 
 export interface player {
@@ -21,7 +19,6 @@ class Store {
   private static instance: Store;
   private data: any = {};
   public rooms: Map<string, RoomContent> = new Map();
-  public allPlayers: player[] = [];
 
   static getInstance() {
     if (!Store.instance) {
@@ -40,10 +37,10 @@ class Store {
     throw 'property already set';
   }
 
-  static emptyRoom(io: Server, roomCode: string): RoomContent {
+  static emptyRoom(): RoomContent {
     return {
       players: [],
-      currentGame: new BangBang(io, roomCode),
+      currentGame: null,
     };
   }
 }
