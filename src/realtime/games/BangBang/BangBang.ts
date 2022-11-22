@@ -38,20 +38,21 @@ class BangBang extends Game {
         return p.socketID === id;
       });
 
-    if (player) {
-      this.numberOfPlayers += 1;
+    if (!player) return;
+    this.numberOfPlayers += 1;
 
-      // TODO: have playerGameData be a copy of room.players initialised at the constructor
-      this.playerGameData.push({
-        id: player.socketID,
-        nickname: player.nickname,
-        seed: player.avatarSeed,
-        shotTime: 0,
-      });
-    }
+    // TODO: have playerGameData be a copy of room.players initialised at the constructor
+    this.playerGameData.push({
+      id: player.socketID,
+      nickname: player.nickname,
+      seed: player.avatarSeed,
+      shotTime: 0,
+    });
 
     const playersOnRoom = this.runtimeStorage.rooms.get(this.runningOnRoom)
       ?.players.length;
+    console.log(`Players on room: ${playersOnRoom}`);
+    console.log(`Numbers of players: ${this.numberOfPlayers}`);
     if (this.numberOfPlayers === playersOnRoom) {
       console.log(`Current number of players in game: ${this.numberOfPlayers}`);
       console.log(`About to start timer on room ${this.runningOnRoom}`);
@@ -69,21 +70,61 @@ class BangBang extends Game {
       player.shotTime = payload.time;
       console.log(`Player ${player.id}'s time: ${player.shotTime}`);
 
+      const playersRanking = this.playerGameData
+        .filter((p) => !!p.shotTime)
+        .sort((a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime);
+
+      this.io
+        .to(this.runningOnRoom)
+        .emit('message', {
+          message: 'bangbang_result',
+          ranking: playersRanking,
+        });
+
       const hasFired = this.playerGameData
         .map((p: bangbangData) => !!p.shotTime)
         .reduce((ac: any, at: any) => ac && at);
+
       console.log(hasFired);
+
       if (hasFired) {
-        const winnerID = this.playerGameData.sort(
-          (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
-        )[0].id;
         this.io
           .to(this.runningOnRoom)
-          .emit('message', { message: 'bangbang_result', id: winnerID });
+          .emit('message', {
+            message: 'bangbang_ranking',
+            ranking: playersRanking,
+          });
 
         this.playerGameData = [];
         this.numberOfPlayers = 0;
       }
+    }
+  }
+
+  handleDisconnect(id: string): void {
+    const index = this.playerGameData.findIndex((p) => p.id === id);
+    this.playerGameData.splice(index, 1);
+    if (this.playerGameData.length === 0) return;
+
+    const hasFired = this.playerGameData
+      .map((p: bangbangData) => !!p.shotTime)
+      .reduce((ac: any, at: any) => ac && at);
+
+    console.log(hasFired);
+    if (hasFired) {
+      const playersRanking = this.playerGameData.sort(
+        (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
+      );
+
+      this.io
+        .to(this.runningOnRoom)
+        .emit('message', {
+          message: 'bangbang_ranking',
+          ranking: playersRanking,
+        });
+
+      this.playerGameData = [];
+      this.numberOfPlayers = 0;
     }
   }
 }
