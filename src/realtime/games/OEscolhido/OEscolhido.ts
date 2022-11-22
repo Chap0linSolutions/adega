@@ -19,7 +19,7 @@ class OEscolhido extends Game {
   playerGameData: player[];
   session: votingSession[];
   mostVotedPlayers: mostVoted[];
-  roomCode: string; //runningOnRoom é muito ruim kkk vamos deixar roomCode mesmo que já estava bem estabelecido, por favor
+  roomCode: string;
 
   constructor(io: Server, room: string) {
     super(io, room);
@@ -30,15 +30,6 @@ class OEscolhido extends Game {
     this.roomCode = room;
 
     this.beginVoting();
-  }
-
-  updatePlayers() {
-    this.playerGameData = this.runtimeStorage.rooms.get(this.roomCode)
-      ?.players as player[];
-    console.log(
-      `Sala ${this.roomCode} - atualizada a lista de quem está jogando O Escolhido:`
-    );
-    console.log(this.playerGameData);
   }
 
   //id: socketID
@@ -87,14 +78,12 @@ class OEscolhido extends Game {
 
     let allVoted = true;
 
-    this.session?.forEach((player) => {
-      if (player.hasVotedIn === undefined) {
-        console.log(
-          `Sala ${this.roomCode} - Ainda há jogadores que não votaram.`
-        );
-        allVoted = false; //se ainda faltar alguém pra votar, paramos nesse return
-      }
-    });
+    if (this.session.find((player) => player.hasVotedIn === undefined)) {
+      console.log(
+        `Sala ${this.roomCode} - Ainda há jogadores que não votaram.`
+      );
+      allVoted = false; //se ainda faltar alguém pra votar, paramos nesse return
+    }
 
     if (allVoted) {
       this.finishVoting(); //se todos já votaram, por outro lado, prosseguimos com os resultados
@@ -159,12 +148,8 @@ class OEscolhido extends Game {
     );
     this.io
       .to(this.roomCode)
-      .emit('vote-results', JSON.stringify(mostVotedPlayers)); //não é absolutamente necessário usar o stringify, mas pode ser boa prática
+      .emit('vote-results', JSON.stringify(mostVotedPlayers));
     this.mostVotedPlayers = [];
-    // this.session.forEach(player => {
-    //   player.hasVotedIn = undefined;
-    //   player.votesReceived = 0;
-    // });
   }
 }
 

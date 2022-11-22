@@ -6,9 +6,8 @@ class SocketConnection {
   io: Server;
   runtimeStorage: Store;
   rooms: Map<string, RoomContent>;
-  
-  allPlayers: player[];
 
+  allPlayers: player[];
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
@@ -65,9 +64,9 @@ class SocketConnection {
     });
 
     this.socket.on('message', (value) => {
-      this.handleGameMessage(value.room, value.message, value.payload);     //conflito aqui
-    })
-    
+      this.handleGameMessage(value.room, value.message, value.payload);
+    });
+
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
     });
@@ -107,9 +106,6 @@ class SocketConnection {
     const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
 
-
-    //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
-
     if (players) {
       players.forEach((p: player) => {
         //se já existir um player no jogo com o mesmo id de socket, não vamos adicionar novamente e sim atualizar o existente
@@ -138,7 +134,6 @@ class SocketConnection {
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
 
-      //console.log(`players atualmente na sala:  ${JSON.stringify(players)}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
@@ -188,6 +183,3 @@ function realtime(io: Server) {
 }
 
 export default realtime;
-
-//on handleGameMessage:
-//    console.log(`tag: ${value}\n`);
