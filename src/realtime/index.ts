@@ -1,22 +1,19 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player } from './store';
 import { RoomContent } from './store';
+import { gameList } from './games/GameOptions';
 
 class SocketConnection {
   socket: Socket;
   io: Server;
   runtimeStorage: Store;
+  currentRoom?: RoomContent;
   rooms: Map<string, RoomContent>;
 
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
     this.runtimeStorage = Store.getInstance();
-
-    //adding room to Store for testing
-    if (!this.runtimeStorage.rooms.has('123456')) {
-      this.runtimeStorage.rooms.set('123456', Store.emptyRoom());
-    }
 
     this.rooms = this.runtimeStorage.rooms;
 
@@ -40,16 +37,41 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('games-update', (roomCode) => {
+      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
+    });
+
+    this.socket.on('roulette-number-is', (roomCode: string) => {
+      this.handleNextGameSelection(roomCode);
+    });
+
+    this.socket.on('start-game', (value) => {
+      console.log(
+        `Sala ${value.roomCode} - solicitado o início do jogo ${value.gameName}.`
+      );
+      this.runtimeStorage.startGameOnRoom(
+        value.roomCode,
+        value.gameName,
+        this.io
+      );
+    });
+
     this.socket.on('message', (value) => {
       this.handleGameMessage(value.room, value.message, value.payload);
+    });
+
+    this.socket.on('move-room-to', (value) => {
+      this.handleMoving(value.roomCode, value.destination);
     });
   }
 
   joinRoom(roomCode: string) {
-    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
+    //console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     if (this.rooms.has(roomCode)) {
       this.socket.join(roomCode);
+      this.currentRoom = this.rooms.get(roomCode);
       reply = `ingressou na sala ${roomCode}.`;
     }
     return reply;
@@ -69,6 +91,7 @@ class SocketConnection {
 
     const currentRoom = this.rooms.get(npd.roomCode);
     const players = currentRoom?.players;
+    let playerID = Math.floor(10000 * Math.random());
 
     //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
 
@@ -81,27 +104,24 @@ class SocketConnection {
       });
 
       if (index >= 0) {
+        //removendo dados antigos para colocar os novos no lugar (no caso de ser atualização do player)
         players.splice(index, 1);
-        console.log(`atualizados os dados do jogador ${npd.nickname}\n`);
-      } else {
-        console.log(
-          `adicionado os dados do jogador de ID ${
-            this.socket.id
-          } --> ${JSON.stringify(npd)}\n`
-        );
       }
 
       players.push(npd);
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
 
-      console.log(`players atualmente na sala:  ${JSON.stringify(players)}\n`);
+      const playersNames: string[] = [];
+      players.forEach((player) => playersNames.push(` ${player.nickname}`));
+
+      console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
 
   sendMessage(message: string, room: string) {
-    console.log('hey\n', room, message);
+    //console.log('hey\n', room, message);
     this.io.to(room).emit('message', { message, room });
   }
 
@@ -115,7 +135,7 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`o jogador ${p.nickname} saiu.\n`);
+          //console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
@@ -134,8 +154,45 @@ class SocketConnection {
 
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
-    console.log(`tag: ${value}\n`);
+    //console.log(`tag: ${value}\n`);
     currentGame?.handleMessage(this.socket.id, value, payload);
+  }
+
+  handleMoving(roomCode: string, destination: string | number) {
+    // console.log(
+    //   `Solicitado o movimento da sala para o destino: ${destination}`
+    // );
+    this.io.to(roomCode).emit('room-is-moving-to', destination);
+  }
+
+  handleNextGameSelection(roomCode: string) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    if (!room.options.gamesList.find((game) => game.counter === 0)) {
+      //checkToLower
+      console.log('Todos os jogos com contador > 0.');
+      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
+    }
+
+    const gamesList = room?.options.gamesList;
+    const drawableOptions = gamesList.filter((game) => game.counter < 4); //filtra jogos que já saíram 4x
+    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
+    const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
+
+    const selectedGame = gamesList.find((game) => game.name === gameDraw)!;
+    const selectedGameNumber = gamesList.indexOf(selectedGame);
+
+    room.options.gamesList[selectedGameNumber].counter += 1;
+    this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+    console.log(
+      `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
+    );
+
+    setTimeout(() => {
+      this.handleMoving(roomCode, '/BangBang');
+      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+    }, 5000);
   }
 }
 
