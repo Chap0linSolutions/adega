@@ -13,15 +13,17 @@ export default class RoomAccessController {
   }
 
   async createRoom(req: Request, res: Response) {
-    //TODO: make sure that the user can only create one room at a time to prevent DDoS attack
-    //      with logged on user
-
     const activeRooms = Store.getInstance().rooms;
     let newRoomCode = '';
-    do {
-      newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    } while (activeRooms.has(newRoomCode));
-    activeRooms.set(newRoomCode, Store.emptyRoom());
-    res.status(200).send(newRoomCode);
+    // TODO: implement better DDoS protection method
+    if (activeRooms.keys.length <= 500) {
+      do {
+        newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      } while (activeRooms.has(newRoomCode));
+      activeRooms.set(newRoomCode, Store.emptyRoom());
+      res.status(200).send(newRoomCode);
+    } else {
+      res.status(503).send('Limite de salas atingido');
+    }
   }
 }

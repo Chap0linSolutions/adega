@@ -55,18 +55,6 @@ class SocketConnection {
     return reply;
   }
 
-  createRoom(roomCode: string) {
-    let reply = `[ERROR]\nNão foi possível criar a sala ${roomCode}.`;
-    console.log('Entrou Aqui');
-    if (this.rooms.has(roomCode)) {
-      reply = `Já existe uma sala registrada com esse código!`;
-    } else {
-      this.rooms.set(roomCode, Store.emptyRoom());
-      reply = `Sala ${roomCode} criada com sucesso!`;
-    }
-    return reply;
-  }
-
   verifyIfRoomExists(roomCode: string) {
     let reply = 'a sala não existe.';
     if (this.rooms.has(roomCode)) {
