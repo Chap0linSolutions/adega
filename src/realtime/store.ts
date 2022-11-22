@@ -27,7 +27,7 @@ class Store {
   public rooms: Map<string, RoomContent> = new Map([
     ['123456', Store.emptyRoom()],
   ]);
-  
+
   static getInstance() {
     if (!Store.instance) {
       Store.instance = new Store();
@@ -50,7 +50,7 @@ class Store {
 
     switch (gameName) {
       case 'O Escolhido':
-        //newGame = new OEscolhido(io, roomCode);
+        newGame = new OEscolhido(io, roomCode);
         break;
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
@@ -68,7 +68,7 @@ class Store {
       `Erro! O jogo na sala ${roomCode} não pôde ser iniciado - this.rooms.get(roomCode) resultou em 'undefined'.`
     );
   }
-  
+
   static emptyRoom(): RoomContent {
     return {
       players: [],

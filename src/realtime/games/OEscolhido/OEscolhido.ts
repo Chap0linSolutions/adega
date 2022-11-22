@@ -50,9 +50,11 @@ class OEscolhido extends Game {
     }
   }
 
+  handleDisconnect(playerName: string) {}
+
   handleVote(socketID: string, votedPlayer: string) {
     //contabilização dos votos
-    console.log(votedPlayer);
+    //console.log(votedPlayer);
     const vote = JSON.parse(votedPlayer);
     const whoVoted = this.playerGameData.find(
       (player) => player.socketID === socketID
@@ -79,9 +81,6 @@ class OEscolhido extends Game {
     let allVoted = true;
 
     if (this.session.find((player) => player.hasVotedIn === undefined)) {
-      console.log(
-        `Sala ${this.roomCode} - Ainda há jogadores que não votaram.`
-      );
       allVoted = false; //se ainda faltar alguém pra votar, paramos nesse return
     }
 
