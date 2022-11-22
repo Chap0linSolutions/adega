@@ -151,6 +151,10 @@ class OEscolhido extends Game {
       .emit('vote-results', JSON.stringify(mostVotedPlayers));
     this.mostVotedPlayers = [];
   }
+
+  handleDisconnect(id: string): void {
+    console.log(`User ${id} has disconnected`);
+  }
 }
 
 export { OEscolhido };

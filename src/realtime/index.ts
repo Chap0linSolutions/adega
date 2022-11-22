@@ -42,7 +42,7 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
@@ -97,7 +97,7 @@ class SocketConnection {
 
     const currentRoom = this.rooms.get(npd.roomCode);
     const players = currentRoom?.players;
-    let playerID = Math.floor(10000 * Math.random());
+    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
       players.forEach((p: player) => {
@@ -195,8 +195,9 @@ class SocketConnection {
     );
 
     setTimeout(() => {
-      this.handleMoving(roomCode, '/BangBang');
-      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      //TODO: randomise next game inside this timeout (roleta animation time)
+      this.handleMoving(roomCode, '/OEscolhido');
+      this.runtimeStorage.startGameOnRoom(roomCode, 'O Escolhido', this.io);
     }, 5000);
   }
 }
