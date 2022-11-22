@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
-import Store, { player } from './store';
-import { RoomContent } from './store';
+import Store, { player, RoomContent } from './store';
 import { gameList } from './games/GameOptions';
 
 class SocketConnection {
@@ -31,6 +30,11 @@ class SocketConnection {
 
     this.socket.on('add-player', (newPlayerData) => {
       this.addPlayer(newPlayerData);
+    });
+
+    this.socket.on('lobby-update', (roomCode) => {
+      const players = JSON.stringify(this.rooms.get(roomCode)?.players);
+      this.io.to(roomCode).emit('lobby-update', players);
     });
 
     this.socket.on('disconnect', () => {
@@ -69,7 +73,8 @@ class SocketConnection {
   joinRoom(roomCode: string) {
     //console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
-    if (this.rooms.has(roomCode)) {
+    const players = this.rooms.get(roomCode);
+    if (players) {
       this.socket.join(roomCode);
       this.currentRoom = this.rooms.get(roomCode);
       reply = `ingressou na sala ${roomCode}.`;
@@ -87,18 +92,18 @@ class SocketConnection {
 
   addPlayer(newPlayerData: string) {
     let index = -1;
+    let beerCount = 0;
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
     const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
 
-    //console.log(`players da sala antes: ${JSON.stringify(players)}\n`);
-
     if (players) {
       players.forEach((p: player) => {
         //se já existir um player no jogo com o mesmo id de socket, não vamos adicionar novamente e sim atualizar o existente
-        if (p?.socketID === this.socket.id) {
+        if (p.socketID === this.socket.id) {
+          beerCount = p.beers;
           index = players.indexOf(p);
         }
       });
@@ -108,7 +113,11 @@ class SocketConnection {
         players.splice(index, 1);
       }
 
-      players.push(npd);
+      currentRoom.players.push({
+        ...npd,
+        beers: beerCount,
+        playerID: playerID,
+      });
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
 
@@ -154,14 +163,10 @@ class SocketConnection {
 
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
-    //console.log(`tag: ${value}\n`);
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    // console.log(
-    //   `Solicitado o movimento da sala para o destino: ${destination}`
-    // );
     this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
 

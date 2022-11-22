@@ -1,8 +1,12 @@
+import { Server } from 'socket.io';
+import BangBang from './games/BangBang';
+import OEscolhido from './games/OEscolhido';
 import Game from './games/game';
 import { OptionsType, defaultGameList } from './games/GameOptions';
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
+  playerID: number;
   roomCode: string;
   currentlyPlaying: boolean;
   nickname: string;
@@ -10,7 +14,6 @@ export interface player {
   beers: number;
   socketID: string;
 }
-
 export interface RoomContent {
   players: player[];
   currentGame: Game | null;
@@ -21,7 +24,6 @@ export interface RoomContent {
 class Store {
   private static instance: Store;
   private data: any = {};
-
   public rooms: Map<string, RoomContent> = new Map([
     ['123456', Store.emptyRoom()],
   ]);
@@ -45,6 +47,7 @@ class Store {
 
   startGameOnRoom(roomCode: string, gameName: string, io: Server) {
     let newGame = null;
+
     switch (gameName) {
       case 'O Escolhido':
         //newGame = new OEscolhido(io, roomCode);
