@@ -144,7 +144,7 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          //console.log(`o jogador ${p.nickname} saiu.\n`);
+          console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
@@ -195,8 +195,13 @@ class SocketConnection {
     );
 
     setTimeout(() => {
-      this.handleMoving(roomCode, '/BangBang');
-      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      const random = Math.round(Math.random()); //0 ou 1
+      const nextRound =
+        random === 0
+          ? { url: '/OEscolhido', title: 'O Escolhido' }
+          : { url: '/BangBang', title: 'Bang Bang' };
+      this.handleMoving(roomCode, nextRound.url);
+      this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
     }, 5000);
   }
 }
