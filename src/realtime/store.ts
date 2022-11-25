@@ -13,12 +13,15 @@ export interface player {
   avatarSeed: string;
   beers: number;
   socketID: string;
+  currentTurn: boolean;
 }
+
 export interface RoomContent {
   players: player[];
   currentGame: Game | null;
   lastGameName: string | null;
   options: OptionsType;
+  ownerId: string | null;
 }
 
 class Store {
@@ -77,6 +80,7 @@ class Store {
       options: {
         gamesList: defaultGameList,
       },
+      ownerId: null,
     };
   }
 }
