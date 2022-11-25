@@ -149,6 +149,7 @@ class SocketConnection {
       });
     }
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+    this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
