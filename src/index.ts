@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import http from 'http';
+import https from 'https';
 import { Server } from 'socket.io';
 
 import routes from './routes';
@@ -9,7 +9,7 @@ import realtime from './realtime';
 const PORT = 3000;
 
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(app);
 app.use(cors());
 app.use(routes);
 
@@ -19,6 +19,6 @@ realtime(io);
 
 server.listen(PORT, () => {
   console.log(
-    'The application is listening ' + 'on port http://localhost:' + PORT
+    'The application is listening ' + 'on port https://localhost:' + PORT
   );
 });
