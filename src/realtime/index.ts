@@ -61,6 +61,15 @@ class SocketConnection {
       );
     });
 
+    this.socket.on('player-who-drank-is', (value) => {
+      const playerWhoDrank = JSON.parse(value.player);
+      const roomCode = value.roomCode;
+      const room = this.rooms.get(roomCode)!;
+
+      room.players.find(player => player.nickname === playerWhoDrank.nickname)!.beers += 1;
+      console.log(`Sala ${roomCode} - O jogador ${playerWhoDrank.nickname} bebeu!`);
+    })
+
     this.socket.on('message', (value) => {
       this.handleGameMessage(value.room, value.message, value.payload);
     });
