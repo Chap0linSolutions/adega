@@ -32,6 +32,11 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('player-turn', (roomCode: string) => {
+      const currentTurnID = this.verifyTurn(roomCode);
+      this.io.to(roomCode).emit('player-turn', currentTurnID);
+    })
+
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
       this.io.to(roomCode).emit('lobby-update', players);
@@ -90,15 +95,23 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
+  verifyTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentTurn = currentRoom?.players.find((player) => player.currentTurn == true);
+    return currentTurn?.socketID;
+  }
+
   addPlayer(newPlayerData: string) {
     let index = -1;
     let beerCount = 0;
+    let currentTurn = false;
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
     if (currentRoom?.ownerId === null) {
       console.log(`User ${npd.socketID} created new room ${npd.roomCode}`)
       currentRoom!.ownerId = this.socket.id;
+      currentTurn = true;
     }
     const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
@@ -122,6 +135,7 @@ class SocketConnection {
         ...npd,
         beers: beerCount,
         playerID: playerID,
+        currentTurn: currentTurn,
       });
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
@@ -162,9 +176,8 @@ class SocketConnection {
     if ((this.rooms.get(targetRoom)?.players.length) && 
     !currentPlayers?.find(owner => owner.socketID == currentRoom?.ownerId)) {
       const newOwner = currentPlayers![0].socketID;
-      console.log(`Updating room owner:\n Was ${currentRoom?.ownerId}\n Is ${newOwner}`);
       currentRoom!.ownerId = newOwner;
-      console.log(`New owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
+      console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
