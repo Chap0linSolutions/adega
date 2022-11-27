@@ -71,7 +71,7 @@ class SocketConnection {
   }
 
   joinRoom(roomCode: string) {
-    //console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
+    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     const players = this.rooms.get(roomCode);
     if (players) {
@@ -96,12 +96,17 @@ class SocketConnection {
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
+    if (currentRoom?.ownerId === null) {
+      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`)
+      currentRoom!.ownerId = this.socket.id;
+    }
     const players = currentRoom?.players;
     let playerID = Math.floor(10000 * Math.random());
 
     if (players) {
       players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket, não vamos adicionar novamente e sim atualizar o existente
+        //se já existir um player no jogo com o mesmo id de socket, 
+        //não vamos adicionar novamente e sim atualizar o existente
         if (p.socketID === this.socket.id) {
           beerCount = p.beers;
           index = players.indexOf(p);
@@ -109,7 +114,7 @@ class SocketConnection {
       });
 
       if (index >= 0) {
-        //removendo dados antigos para colocar os novos no lugar (no caso de ser atualização do player)
+        // Player data update
         players.splice(index, 1);
       }
 
@@ -126,11 +131,11 @@ class SocketConnection {
 
       console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
+      this.io.to(npd.roomCode).emit('room-owner-is', currentRoom.ownerId);
     }
   }
 
   sendMessage(message: string, room: string) {
-    //console.log('hey\n', room, message);
     this.io.to(room).emit('message', { message, room });
   }
 
@@ -148,12 +153,27 @@ class SocketConnection {
         }
       });
     }
+
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+
+    let currentRoom = this.rooms.get(targetRoom);
+    const currentPlayers = this.rooms.get(targetRoom)?.players;
+
+    if ((this.rooms.get(targetRoom)?.players.length) && 
+    !currentPlayers?.find(owner => owner.socketID == currentRoom?.ownerId)) {
+      const newOwner = currentPlayers![0].socketID;
+      console.log(`Updating room owner:\n Was ${currentRoom?.ownerId}\n Is ${newOwner}`);
+      currentRoom!.ownerId = newOwner;
+      console.log(`New owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
+      this.io.to(targetRoom).emit('room-owner-is', newOwner);
+    }
+
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
     }
+
     this.io
       .to(targetRoom)
       .emit(
