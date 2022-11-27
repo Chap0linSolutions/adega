@@ -32,8 +32,18 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('set-turn', (roomCode: string) => {
+      this.setTurn(roomCode);
+      this.verifyTurn(roomCode);
+    })
+
     this.socket.on('player-turn', (roomCode: string) => {
-      const currentTurnID = this.verifyTurn(roomCode);
+      let currentTurnID = this.verifyTurn(roomCode);
+      if (currentTurnID === undefined) {
+        console.log('Current turn not found! Setting owner as next player!');
+        this.setTurn(roomCode);
+        currentTurnID = this.verifyTurn(roomCode);
+      }
       this.io.to(roomCode).emit('player-turn', currentTurnID);
     });
 
@@ -95,10 +105,18 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
+  setTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentOwner = currentRoom?.players.find(
+      (player) => player.socketID === currentRoom.ownerId
+    );
+    currentOwner!.currentTurn = true;
+  }
+
   verifyTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
     const currentTurn = currentRoom?.players.find(
-      (player) => player.currentTurn == true
+      (player) => player.currentTurn === true
     );
     return currentTurn?.socketID;
   }

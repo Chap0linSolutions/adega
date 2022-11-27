@@ -24,7 +24,7 @@ class BangBang extends Game {
 
   handleMessage(id: any, value: any, payload: any) {
     if (value === 'player_ready') {
-      console.log('Player ready');
+      //console.log('Player ready');
       this.startGame(id);
     }
 
@@ -36,11 +36,8 @@ class BangBang extends Game {
         this.updateTurn(this.roomCode);
         this.io
           .to(this.roomCode)
-          .emit(
-            'player-turn',
-            this.runtimeStorage.rooms
-              .get(this.roomCode)
-              ?.players.find((player) => player.currentTurn === true)?.socketID
+          .emit('player-turn', this.runtimeStorage.rooms.get(this.roomCode)?.players.find(
+            (player) => player.currentTurn === true)?.socketID
           );
       }
       this.handleShot(id, payload);
@@ -68,11 +65,11 @@ class BangBang extends Game {
 
     const playersOnRoom = this.runtimeStorage.rooms.get(this.roomCode)?.players
       .length;
-    console.log(`Players on room: ${playersOnRoom}`);
-    console.log(`Numbers of players: ${this.numberOfPlayers}`);
+    //console.log(`Players on room: ${playersOnRoom}`);
+    //console.log(`Numbers of players: ${this.numberOfPlayers}`);
     if (this.numberOfPlayers === playersOnRoom) {
-      console.log(`Current number of players in game: ${this.numberOfPlayers}`);
-      console.log(`About to start timer on room ${this.roomCode}`);
+      //console.log(`Current number of players in game: ${this.numberOfPlayers}`);
+      //console.log(`About to start timer on room ${this.roomCode}`);
       this.io.to(this.roomCode).emit('message', { message: 'start_timer' });
     }
   }
@@ -83,7 +80,7 @@ class BangBang extends Game {
 
     if (player) {
       player.shotTime = payload.time;
-      console.log(`Player ${player.id}'s time: ${player.shotTime}`);
+      //console.log(`Player ${player.id}'s time: ${player.shotTime}`);
 
       const playersRanking = this.playerGameData
         .filter((p) => !!p.shotTime)
@@ -131,7 +128,7 @@ class BangBang extends Game {
         message: 'bangbang_ranking',
         ranking: playersRanking,
       });
-
+      
       this.playerGameData = [];
       this.numberOfPlayers = 0;
     }

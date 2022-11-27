@@ -21,17 +21,18 @@ abstract class Game {
   updateTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
     let currentTurnIndex = currentRoom?.players.findIndex(
-      (player) => player.currentTurn == true
+      (player) => player.currentTurn === true
     );
     currentRoom!.players[currentTurnIndex!].currentTurn = false;
     if (currentTurnIndex! < currentRoom!.players.length - 1) {
       currentTurnIndex! += 1;
     } else {
-      currentTurnIndex! = 0;
+      currentTurnIndex = 0;
     }
     currentRoom!.players[currentTurnIndex!].currentTurn = true;
-    console.log('\nNext player to play:');
-    console.log(currentRoom?.players[currentTurnIndex!].nickname);
+    console.log('Next player is:')
+    console.log(this.runtimeStorage.rooms.get(roomCode)?.players.find(
+      (player) => player.currentTurn === true)?.nickname);
   }
 }
 
