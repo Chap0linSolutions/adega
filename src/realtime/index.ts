@@ -47,7 +47,7 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
@@ -114,7 +114,7 @@ class SocketConnection {
       currentTurn = true;
     }
     const players = currentRoom?.players;
-    let playerID = Math.floor(10000 * Math.random());
+    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
       players.forEach((p: player) => {

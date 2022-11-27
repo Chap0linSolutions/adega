@@ -150,6 +150,10 @@ class OEscolhido extends Game {
     this.mostVotedPlayers = [];
     this.updateTurn(this.roomCode);
   }
+
+  handleDisconnect(id: string): void {
+    console.log(`User ${id} has disconnected`);
+  }
 }
 
 export { OEscolhido };

@@ -62,7 +62,7 @@ class Store {
         console.log('Erro! O jogo solicitado ainda não foi implementado.');
         return;
     }
-    let currentRoom = this.rooms.get(roomCode);
+    const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {
       currentRoom.currentGame = newGame;
       return;
