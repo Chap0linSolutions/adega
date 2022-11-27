@@ -19,7 +19,6 @@ class OEscolhido extends Game {
   playerGameData: player[];
   session: votingSession[];
   mostVotedPlayers: mostVoted[];
-  roomCode: string;
 
   constructor(io: Server, room: string) {
     super(io, room);
@@ -49,8 +48,6 @@ class OEscolhido extends Game {
       }
     }
   }
-
-  handleDisconnect(playerName: string) {}
 
   handleVote(socketID: string, votedPlayer: string) {
     //contabilização dos votos
@@ -149,6 +146,11 @@ class OEscolhido extends Game {
       .to(this.roomCode)
       .emit('vote-results', JSON.stringify(mostVotedPlayers));
     this.mostVotedPlayers = [];
+    this.updateTurn(this.roomCode);
+  }
+
+  handleDisconnect(id: string): void {
+    console.log(`User ${id} has disconnected`);
   }
 }
 

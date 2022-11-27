@@ -32,6 +32,11 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('player-turn', (roomCode: string) => {
+      const currentTurnID = this.verifyTurn(roomCode);
+      this.io.to(roomCode).emit('player-turn', currentTurnID);
+    });
+
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
       this.io.to(roomCode).emit('lobby-update', players);
@@ -42,7 +47,7 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
@@ -90,22 +95,32 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
+  verifyTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentTurn = currentRoom?.players.find(
+      (player) => player.currentTurn == true
+    );
+    return currentTurn?.socketID;
+  }
+
   addPlayer(newPlayerData: string) {
     let index = -1;
     let beerCount = 0;
+    let currentTurn = false;
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
     if (currentRoom?.ownerId === null) {
-      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`)
+      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`);
       currentRoom!.ownerId = this.socket.id;
+      currentTurn = true;
     }
     const players = currentRoom?.players;
-    let playerID = Math.floor(10000 * Math.random());
+    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
       players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket, 
+        //se já existir um player no jogo com o mesmo id de socket,
         //não vamos adicionar novamente e sim atualizar o existente
         if (p.socketID === this.socket.id) {
           beerCount = p.beers;
@@ -122,6 +137,7 @@ class SocketConnection {
         ...npd,
         beers: beerCount,
         playerID: playerID,
+        currentTurn: currentTurn,
       });
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
@@ -156,15 +172,16 @@ class SocketConnection {
 
     this.rooms.get(targetRoom)?.players.splice(index, 1);
 
-    let currentRoom = this.rooms.get(targetRoom);
+    const currentRoom = this.rooms.get(targetRoom);
     const currentPlayers = this.rooms.get(targetRoom)?.players;
 
-    if ((this.rooms.get(targetRoom)?.players.length) && 
-    !currentPlayers?.find(owner => owner.socketID == currentRoom?.ownerId)) {
+    if (
+      this.rooms.get(targetRoom)?.players.length &&
+      !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
+    ) {
       const newOwner = currentPlayers![0].socketID;
-      console.log(`Updating room owner:\n Was ${currentRoom?.ownerId}\n Is ${newOwner}`);
       currentRoom!.ownerId = newOwner;
-      console.log(`New owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
+      console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
