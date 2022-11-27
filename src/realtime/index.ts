@@ -35,7 +35,7 @@ class SocketConnection {
     this.socket.on('player-turn', (roomCode: string) => {
       const currentTurnID = this.verifyTurn(roomCode);
       this.io.to(roomCode).emit('player-turn', currentTurnID);
-    })
+    });
 
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
@@ -97,7 +97,9 @@ class SocketConnection {
 
   verifyTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    const currentTurn = currentRoom?.players.find((player) => player.currentTurn == true);
+    const currentTurn = currentRoom?.players.find(
+      (player) => player.currentTurn == true
+    );
     return currentTurn?.socketID;
   }
 
@@ -109,7 +111,7 @@ class SocketConnection {
 
     const currentRoom = this.rooms.get(npd.roomCode);
     if (currentRoom?.ownerId === null) {
-      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`)
+      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`);
       currentRoom!.ownerId = this.socket.id;
       currentTurn = true;
     }
@@ -118,7 +120,7 @@ class SocketConnection {
 
     if (players) {
       players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket, 
+        //se já existir um player no jogo com o mesmo id de socket,
         //não vamos adicionar novamente e sim atualizar o existente
         if (p.socketID === this.socket.id) {
           beerCount = p.beers;
@@ -170,11 +172,13 @@ class SocketConnection {
 
     this.rooms.get(targetRoom)?.players.splice(index, 1);
 
-    let currentRoom = this.rooms.get(targetRoom);
+    const currentRoom = this.rooms.get(targetRoom);
     const currentPlayers = this.rooms.get(targetRoom)?.players;
 
-    if ((this.rooms.get(targetRoom)?.players.length) && 
-    !currentPlayers?.find(owner => owner.socketID == currentRoom?.ownerId)) {
+    if (
+      this.rooms.get(targetRoom)?.players.length &&
+      !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
+    ) {
       const newOwner = currentPlayers![0].socketID;
       currentRoom!.ownerId = newOwner;
       console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);

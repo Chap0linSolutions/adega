@@ -20,6 +20,9 @@ routes.put('/createRoom', roomAccessController.createRoom);
 
 routes.get('/example', exampleController.index);
 
-routes.get('/nicknameCheck/:roomCode/:userName', roomPlayerNameController.checkNameAvailabiliy);
+routes.get(
+  '/nicknameCheck/:roomCode/:userName',
+  roomPlayerNameController.checkNameAvailabiliy
+);
 
 export default routes;

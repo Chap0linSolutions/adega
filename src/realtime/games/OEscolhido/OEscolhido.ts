@@ -49,8 +49,6 @@ class OEscolhido extends Game {
     }
   }
 
-  handleDisconnect(playerName: string) {}
-
   handleVote(socketID: string, votedPlayer: string) {
     //contabilização dos votos
     //console.log(votedPlayer);

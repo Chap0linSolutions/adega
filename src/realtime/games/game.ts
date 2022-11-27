@@ -20,7 +20,9 @@ abstract class Game {
 
   updateTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    let currentTurnIndex = currentRoom?.players.findIndex((player) => player.currentTurn == true);
+    let currentTurnIndex = currentRoom?.players.findIndex(
+      (player) => player.currentTurn == true
+    );
     currentRoom!.players[currentTurnIndex!].currentTurn = false;
     if (currentTurnIndex! < currentRoom!.players.length - 1) {
       currentTurnIndex! += 1;
@@ -28,7 +30,7 @@ abstract class Game {
       currentTurnIndex! = 0;
     }
     currentRoom!.players[currentTurnIndex!].currentTurn = true;
-    console.log('\nNext player to play:')
+    console.log('\nNext player to play:');
     console.log(currentRoom?.players[currentTurnIndex!].nickname);
   }
 }

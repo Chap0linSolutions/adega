@@ -32,11 +32,16 @@ class BangBang extends Game {
       console.log('Shots fired');
       this.numberOfShots += 1;
       if (this.numberOfShots === this.expectedShots) {
-        console.log('Game finished! Updating turn...')
+        console.log('Game finished! Updating turn...');
         this.updateTurn(this.roomCode);
-        this.io.to(this.roomCode).emit('player-turn',
-          this.runtimeStorage.rooms.get(this.roomCode)?.players.find(
-            (player) => player.currentTurn === true)?.socketID);
+        this.io
+          .to(this.roomCode)
+          .emit(
+            'player-turn',
+            this.runtimeStorage.rooms
+              .get(this.roomCode)
+              ?.players.find((player) => player.currentTurn === true)?.socketID
+          );
       }
       this.handleShot(id, payload);
     }
@@ -61,16 +66,14 @@ class BangBang extends Game {
       shotTime: 0,
     });
 
-    const playersOnRoom = this.runtimeStorage.rooms.get(this.roomCode)
-      ?.players.length;
+    const playersOnRoom = this.runtimeStorage.rooms.get(this.roomCode)?.players
+      .length;
     console.log(`Players on room: ${playersOnRoom}`);
     console.log(`Numbers of players: ${this.numberOfPlayers}`);
     if (this.numberOfPlayers === playersOnRoom) {
       console.log(`Current number of players in game: ${this.numberOfPlayers}`);
       console.log(`About to start timer on room ${this.roomCode}`);
-      this.io
-        .to(this.roomCode)
-        .emit('message', { message: 'start_timer' });
+      this.io.to(this.roomCode).emit('message', { message: 'start_timer' });
     }
   }
 
@@ -120,7 +123,6 @@ class BangBang extends Game {
 
     console.log(hasFired);
     if (hasFired) {
-
       const playersRanking = this.playerGameData.sort(
         (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
       );
