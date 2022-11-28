@@ -12,12 +12,11 @@ class EuNunca {
     " dei match com um amigo no tinder",
     " me escondi quando vi uma barata",
     " virei a noite assistindo série",
-    " imitei um cachorro durante o sexo",
+    " xinguei durante o sexo",
     " falei palavrão perto de uma criança",
     " fiz xixi nas calças",
     " fui a um motel",
     " beijei alguém do mesmo sexo",
-
   ]
   
   static getSuggestions() {

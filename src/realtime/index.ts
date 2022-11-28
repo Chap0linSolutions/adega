@@ -2,7 +2,6 @@ import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { gameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
-
 class SocketConnection {
   socket: Socket;
   io: Server;
@@ -62,14 +61,16 @@ class SocketConnection {
       );
     });
 
-    this.socket.on('player-who-drank-is', (value) => {
-      const playerWhoDrank = JSON.parse(value.player);
+    this.socket.on('players-who-drank-are', (value) => {
+      const playersWhoDrank = value.players;
       const roomCode = value.roomCode;
-      const room = this.rooms.get(roomCode)!;
-
-      room.players.find(player => player.nickname === playerWhoDrank.nickname)!.beers += 1;
-      console.log(`Sala ${roomCode} - O jogador ${playerWhoDrank.nickname} bebeu!`);
+      this.updateBeers(roomCode, playersWhoDrank);
     })
+
+    this.socket.on('who-drank-dummy-players', () => {       //dummy - apagar quando integrar ao resto do jogo
+      console.log('enviando lista dummy de jogadores...');
+      this.sendDummyPlayerList();
+    });
 
     this.socket.on('eu-nunca-suggestions', (roomCode) => {
       const suggestions = EuNunca.getSuggestions();
@@ -213,6 +214,47 @@ class SocketConnection {
       this.handleMoving(roomCode, '/BangBang');
       this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
     }, 5000);
+  }
+
+  updateBeers(roomCode: string, playersWhoDrank: player[]){
+    // const room = this.rooms.get(roomCode)!;                //descomentar estas linhas quando integrar ao resto do código
+    // playersWhoDrank.forEach((player:player) => {
+    //   room.players.find(p => p.nickname === player.nickname)!.beers += 1;
+    // })
+    console.log(`Sala ${roomCode} - O jogadores que beberam:`);
+    console.log(playersWhoDrank);
+  }
+
+  sendDummyPlayerList(){
+    const players = [
+      {
+        nickname: 'Dom Quixote',
+        avatarSeed: 'alex',
+        id: 0,
+      },
+      {
+        nickname: 'Sancho Pança',
+        avatarSeed: 'schp',
+        id: 1,
+      },
+      {
+        nickname: 'Dulcineia',
+        avatarSeed: 'dcna',
+        id: 2,
+      },
+      {
+        nickname: 'Cavalo do Dom Quixote',
+        avatarSeed: 'cvlo',
+        id: 3,
+      },
+      {
+        nickname: 'Moinho de Vento',
+        avatarSeed: 'mnho',
+        id: 4,
+      },
+    ]
+
+    this.socket.emit('lobby-update', players);
   }
 }
 
