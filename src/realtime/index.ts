@@ -32,11 +32,6 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
-    this.socket.on('set-turn', (roomCode: string) => {
-      this.setTurn(roomCode);
-      this.verifyTurn(roomCode);
-    })
-
     this.socket.on('player-turn', (roomCode: string) => {
       let currentTurnID = this.verifyTurn(roomCode);
       if (currentTurnID === undefined) {
@@ -46,6 +41,10 @@ class SocketConnection {
       }
       this.io.to(roomCode).emit('player-turn', currentTurnID);
     });
+
+    this.socket.on('update-turn', (roomCode: string) => {
+      this.updateTurn(roomCode);
+    })
 
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
@@ -119,6 +118,23 @@ class SocketConnection {
       (player) => player.currentTurn === true
     );
     return currentTurn?.socketID;
+  }
+
+  updateTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    let currentTurnIndex = currentRoom?.players.findIndex(
+      (player) => player.currentTurn === true
+    );
+    currentRoom!.players[currentTurnIndex!].currentTurn = false;
+    if (currentTurnIndex! < currentRoom!.players.length - 1) {
+      currentTurnIndex! += 1;
+    } else {
+      currentTurnIndex = 0;
+    }
+    currentRoom!.players[currentTurnIndex!].currentTurn = true;
+    console.log('Next player is:')
+    console.log(this.runtimeStorage.rooms.get(roomCode)?.players.find(
+      (player) => player.currentTurn === true)?.nickname);
   }
 
   addPlayer(newPlayerData: string) {

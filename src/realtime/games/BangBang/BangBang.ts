@@ -11,14 +11,10 @@ type bangbangData = {
 
 class BangBang extends Game {
   playerGameData: bangbangData[];
-  expectedShots: number;
-  numberOfShots: number;
 
   constructor(io: Server, room: string) {
     super(io, room);
     this.playerGameData = [];
-    this.numberOfShots = 0;
-    this.expectedShots = this.runtimeStorage.rooms.get(room)!.players.length;
     console.log('Bang Bang!');
   }
 
@@ -30,16 +26,6 @@ class BangBang extends Game {
 
     if (value === 'shot') {
       console.log('Shots fired');
-      this.numberOfShots += 1;
-      if (this.numberOfShots === this.expectedShots) {
-        console.log('Game finished! Updating turn...');
-        this.updateTurn(this.roomCode);
-        this.io
-          .to(this.roomCode)
-          .emit('player-turn', this.runtimeStorage.rooms.get(this.roomCode)?.players.find(
-            (player) => player.currentTurn === true)?.socketID
-          );
-      }
       this.handleShot(id, payload);
     }
   }

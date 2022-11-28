@@ -146,7 +146,6 @@ class OEscolhido extends Game {
       .to(this.roomCode)
       .emit('vote-results', JSON.stringify(mostVotedPlayers));
     this.mostVotedPlayers = [];
-    this.updateTurn(this.roomCode);
   }
 
   handleDisconnect(id: string): void {

@@ -17,23 +17,6 @@ abstract class Game {
 
   abstract handleMessage(id: any, value: any, payload: any): void;
   abstract handleDisconnect(id: string): void;
-
-  updateTurn(roomCode: string) {
-    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    let currentTurnIndex = currentRoom?.players.findIndex(
-      (player) => player.currentTurn === true
-    );
-    currentRoom!.players[currentTurnIndex!].currentTurn = false;
-    if (currentTurnIndex! < currentRoom!.players.length - 1) {
-      currentTurnIndex! += 1;
-    } else {
-      currentTurnIndex = 0;
-    }
-    currentRoom!.players[currentTurnIndex!].currentTurn = true;
-    console.log('Next player is:')
-    console.log(this.runtimeStorage.rooms.get(roomCode)?.players.find(
-      (player) => player.currentTurn === true)?.nickname);
-  }
 }
 
 export default Game;
