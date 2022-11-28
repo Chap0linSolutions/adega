@@ -44,7 +44,7 @@ class SocketConnection {
 
     this.socket.on('update-turn', (roomCode: string) => {
       this.updateTurn(roomCode);
-    })
+    });
 
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
@@ -132,9 +132,12 @@ class SocketConnection {
       currentTurnIndex = 0;
     }
     currentRoom!.players[currentTurnIndex!].currentTurn = true;
-    console.log('Next player is:')
-    console.log(this.runtimeStorage.rooms.get(roomCode)?.players.find(
-      (player) => player.currentTurn === true)?.nickname);
+    console.log('Next player is:');
+    console.log(
+      this.runtimeStorage.rooms
+        .get(roomCode)
+        ?.players.find((player) => player.currentTurn === true)?.nickname
+    );
   }
 
   addPlayer(newPlayerData: string) {

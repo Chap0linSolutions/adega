@@ -114,7 +114,7 @@ class BangBang extends Game {
         message: 'bangbang_ranking',
         ranking: playersRanking,
       });
-      
+
       this.playerGameData = [];
       this.numberOfPlayers = 0;
     }
