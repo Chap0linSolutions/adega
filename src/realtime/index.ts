@@ -109,7 +109,7 @@ class SocketConnection {
     const currentOwner = currentRoom?.players.find(
       (player) => player.socketID === currentRoom.ownerId
     );
-    currentOwner!.currentTurn = true;
+    if (currentOwner) currentOwner.currentTurn = true;
   }
 
   verifyTurn(roomCode: string) {
@@ -125,13 +125,17 @@ class SocketConnection {
     let currentTurnIndex = currentRoom?.players.findIndex(
       (player) => player.currentTurn === true
     );
-    currentRoom!.players[currentTurnIndex!].currentTurn = false;
-    if (currentTurnIndex! < currentRoom!.players.length - 1) {
-      currentTurnIndex! += 1;
+    if (currentTurnIndex != undefined && currentRoom) {
+      currentRoom.players[currentTurnIndex].currentTurn = false;
+      if (currentTurnIndex < currentRoom.players.length - 1) {
+        currentTurnIndex += 1;
+      } else {
+        currentTurnIndex = 0;
+      }
     } else {
       currentTurnIndex = 0;
     }
-    currentRoom!.players[currentTurnIndex!].currentTurn = true;
+    if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
     console.log('Next player is:');
     console.log(
       this.runtimeStorage.rooms
@@ -147,9 +151,9 @@ class SocketConnection {
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
-    if (currentRoom?.ownerId === null) {
+    if (currentRoom?.ownerId === null && currentRoom) {
       console.log(`User ${npd.socketID} created new room ${npd.roomCode}`);
-      currentRoom!.ownerId = this.socket.id;
+      currentRoom.ownerId = this.socket.id;
       currentTurn = true;
     }
     const players = currentRoom?.players;
@@ -213,11 +217,13 @@ class SocketConnection {
     const currentPlayers = this.rooms.get(targetRoom)?.players;
 
     if (
+      currentPlayers &&
+      currentRoom &&
       this.rooms.get(targetRoom)?.players.length &&
       !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
     ) {
-      const newOwner = currentPlayers![0].socketID;
-      currentRoom!.ownerId = newOwner;
+      const newOwner = currentPlayers[0].socketID;
+      currentRoom.ownerId = newOwner;
       console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
@@ -260,14 +266,16 @@ class SocketConnection {
     const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
     const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
 
-    const selectedGame = gamesList.find((game) => game.name === gameDraw)!;
-    const selectedGameNumber = gamesList.indexOf(selectedGame);
+    const selectedGame = gamesList.find((game) => game.name === gameDraw);
+    if (selectedGame) {
+      const selectedGameNumber = gamesList.indexOf(selectedGame);
 
-    room.options.gamesList[selectedGameNumber].counter += 1;
-    this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
-    console.log(
-      `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
-    );
+      room.options.gamesList[selectedGameNumber].counter += 1;
+      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+      console.log(
+        `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
+      );
+    }
 
     setTimeout(() => {
       const random = Math.round(Math.random()); //0 ou 1

@@ -10,16 +10,18 @@ export default class RoomPlayerNameController {
     );
 
     const currentPlayersInRoom = Store.getInstance().rooms.get(room);
-    const nameInUse = currentPlayersInRoom!.players.find(
-      (player) => player.nickname === nameToVerify
-    );
+    if (currentPlayersInRoom != undefined) {
+      const nameInUse = currentPlayersInRoom.players.find(
+        (player) => player.nickname === nameToVerify
+      );
 
-    if (nameInUse) {
-      console.log('Nome já em uso.');
-      res.status(400).send();
-    } else {
-      console.log('Nome liberado.');
-      res.status(200).send(true);
+      if (nameInUse) {
+        console.log('Nome já em uso.');
+        res.status(400).send();
+      } else {
+        console.log('Nome liberado.');
+        res.status(200).send(true);
+      }
     }
   }
 }
