@@ -1,6 +1,7 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { gameList } from './games/GameOptions';
+import { EuNunca } from './games/EuNunca/EuNunca';
 
 class SocketConnection {
   socket: Socket;
@@ -68,6 +69,11 @@ class SocketConnection {
 
       room.players.find(player => player.nickname === playerWhoDrank.nickname)!.beers += 1;
       console.log(`Sala ${roomCode} - O jogador ${playerWhoDrank.nickname} bebeu!`);
+    })
+
+    this.socket.on('eu-nunca-suggestions', (roomCode) => {
+      const suggestions = EuNunca.getSuggestions();
+      this.socket.emit('eu-nunca-suggestions', suggestions);
     })
 
     this.socket.on('message', (value) => {
