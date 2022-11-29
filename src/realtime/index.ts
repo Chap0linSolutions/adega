@@ -36,7 +36,7 @@ class SocketConnection {
       let currentTurnID = this.verifyTurn(roomCode);
       if (currentTurnID === undefined) {
         console.log('Current turn not found! Setting owner as next player!');
-        this.setTurn(roomCode);
+        this.setInitialTurn(roomCode);
         currentTurnID = this.verifyTurn(roomCode);
       }
       this.io.to(roomCode).emit('player-turn', currentTurnID);
@@ -104,7 +104,7 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
-  setTurn(roomCode: string) {
+  setInitialTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
     const currentOwner = currentRoom?.players.find(
       (player) => player.socketID === currentRoom.ownerId
@@ -278,7 +278,8 @@ class SocketConnection {
     }
 
     setTimeout(() => {
-      const random = Math.round(Math.random()); //0 ou 1
+      //TODO: atualizar seleção do próximo jogo após a adição de todos os jogos da alfa
+      const random = Math.round(Math.random());
       const nextRound =
         random === 0
           ? { url: '/OEscolhido', title: 'O Escolhido' }

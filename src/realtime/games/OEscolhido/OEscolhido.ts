@@ -51,7 +51,6 @@ class OEscolhido extends Game {
 
   handleVote(socketID: string, votedPlayer: string) {
     //contabilização dos votos
-    //console.log(votedPlayer);
     const vote = JSON.parse(votedPlayer);
     const whoVoted = this.playerGameData.find(
       (player) => player.socketID === socketID
