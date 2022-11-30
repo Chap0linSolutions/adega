@@ -67,7 +67,7 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank);
     })
 
-    this.socket.on('who-drank-dummy-players', () => {       //dummy - apagar quando integrar ao resto do jogo
+    this.socket.on('who-drank-dummy-players', () => {       //TODO - apagar quando integrar ao resto do jogo
       console.log('enviando lista dummy de jogadores...');
       this.sendDummyPlayerList();
     });
@@ -217,15 +217,15 @@ class SocketConnection {
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[]){
-    // const room = this.rooms.get(roomCode)!;                //descomentar estas linhas quando integrar ao resto do código
+    // const room = this.rooms.get(roomCode)!;                //TODO: descomentar estas linhas quando integrar ao resto do código
     // playersWhoDrank.forEach((player:player) => {
     //   room.players.find(p => p.nickname === player.nickname)!.beers += 1;
     // })
-    console.log(`Sala ${roomCode} - O jogadores que beberam:`);
+    console.log(`Sala ${roomCode} - Jogadores que beberam:`);
     console.log(playersWhoDrank);
   }
 
-  sendDummyPlayerList(){
+  sendDummyPlayerList(){            //TODO remover esta função quando integrar ao resto do código
     const players = [
       {
         nickname: 'Dom Quixote',

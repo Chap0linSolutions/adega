@@ -20,23 +20,11 @@ class EuNunca {
   ]
   
   static getSuggestions() {
-    let indexes:number[] = [-1, -1, -1];
-    let i = 0;
-    while (i < 3){
-        while(true){
-            let index = Math.floor(Math.random()* EuNunca.suggestions.length);
-            if(indexes.indexOf(index) !== -1){
-                continue;
-            } 
-            indexes[i] = index;
-            break;
-        }
-        i += 1;
-    }
+    const sugs = EuNunca.suggestions.sort(() => 0.5 - Math.random()).slice(0, 3);
     const suggests = [
-        "EU NUNCA" + EuNunca.suggestions[indexes[0]],
-        "EU NUNCA" + EuNunca.suggestions[indexes[1]],
-        "EU NUNCA" + EuNunca.suggestions[indexes[2]],
+        "EU NUNCA" + sugs[0],
+        "EU NUNCA" + sugs[1],
+        "EU NUNCA" + sugs[2],
     ]
     return suggests;
   }
