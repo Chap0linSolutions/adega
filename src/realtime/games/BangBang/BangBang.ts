@@ -74,12 +74,10 @@ class BangBang extends Game {
         .filter((p) => !!p.shotTime)
         .sort((a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime);
 
-      this.io
-        .to(this.runningOnRoom)
-        .emit('message', {
-          message: 'bangbang_result',
-          ranking: playersRanking,
-        });
+      this.io.to(this.runningOnRoom).emit('message', {
+        message: 'bangbang_result',
+        ranking: playersRanking,
+      });
 
       const hasFired = this.playerGameData
         .map((p: bangbangData) => !!p.shotTime)
@@ -88,12 +86,10 @@ class BangBang extends Game {
       console.log(hasFired);
 
       if (hasFired) {
-        this.io
-          .to(this.runningOnRoom)
-          .emit('message', {
-            message: 'bangbang_ranking',
-            ranking: playersRanking,
-          });
+        this.io.to(this.runningOnRoom).emit('message', {
+          message: 'bangbang_ranking',
+          ranking: playersRanking,
+        });
 
         this.playerGameData = [];
         this.numberOfPlayers = 0;
@@ -116,12 +112,10 @@ class BangBang extends Game {
         (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
       );
 
-      this.io
-        .to(this.runningOnRoom)
-        .emit('message', {
-          message: 'bangbang_ranking',
-          ranking: playersRanking,
-        });
+      this.io.to(this.runningOnRoom).emit('message', {
+        message: 'bangbang_ranking',
+        ranking: playersRanking,
+      });
 
       this.playerGameData = [];
       this.numberOfPlayers = 0;

@@ -62,20 +62,15 @@ class SocketConnection {
     });
 
     this.socket.on('players-who-drank-are', (value) => {
-      const playersWhoDrank = value.players;
+      const playersWhoDrank = JSON.parse(value.players);
       const roomCode = value.roomCode;
       this.updateBeers(roomCode, playersWhoDrank);
-    })
-
-    this.socket.on('who-drank-dummy-players', () => {       //TODO - apagar quando integrar ao resto do jogo
-      console.log('enviando lista dummy de jogadores...');
-      this.sendDummyPlayerList();
     });
 
     this.socket.on('eu-nunca-suggestions', (roomCode) => {
       const suggestions = EuNunca.getSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
-    })
+    });
 
     this.socket.on('message', (value) => {
       this.handleGameMessage(value.room, value.message, value.payload);
@@ -211,50 +206,21 @@ class SocketConnection {
     );
 
     setTimeout(() => {
-      this.handleMoving(roomCode, '/BangBang');
-      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      const gameName = Math.round(Math.random()) === 0 ? '/Vrum' : '/EuNunca'; //TODO botar o algoritmo real de seleção acima para rodar
+      this.handleMoving(roomCode, gameName);
+      //this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
     }, 5000);
   }
 
-  updateBeers(roomCode: string, playersWhoDrank: player[]){
-    // const room = this.rooms.get(roomCode)!;                //TODO: descomentar estas linhas quando integrar ao resto do código
-    // playersWhoDrank.forEach((player:player) => {
-    //   room.players.find(p => p.nickname === player.nickname)!.beers += 1;
-    // })
-    console.log(`Sala ${roomCode} - Jogadores que beberam:`);
-    console.log(playersWhoDrank);
-  }
-
-  sendDummyPlayerList(){            //TODO remover esta função quando integrar ao resto do código
-    const players = [
-      {
-        nickname: 'Dom Quixote',
-        avatarSeed: 'alex',
-        id: 0,
-      },
-      {
-        nickname: 'Sancho Pança',
-        avatarSeed: 'schp',
-        id: 1,
-      },
-      {
-        nickname: 'Dulcineia',
-        avatarSeed: 'dcna',
-        id: 2,
-      },
-      {
-        nickname: 'Cavalo do Dom Quixote',
-        avatarSeed: 'cvlo',
-        id: 3,
-      },
-      {
-        nickname: 'Moinho de Vento',
-        avatarSeed: 'mnho',
-        id: 4,
-      },
-    ]
-
-    this.socket.emit('lobby-update', players);
+  updateBeers(roomCode: string, playersWhoDrank: player[]) {
+    const room = this.rooms.get(roomCode)!;
+    playersWhoDrank.forEach((player: player) => {
+      room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+    });
+    console.log(`Sala ${roomCode} - Resumo do porre:`);
+    room.players.forEach((player) => {
+      console.log(`${player.nickname} - ${player.beers} cervejas`);
+    });
   }
 }
 
