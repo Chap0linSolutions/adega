@@ -32,6 +32,11 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('room-owner-is', (roomCode: string) => {
+      const currentOwnerID = this.verifyOwner(roomCode);
+      this.io.to(roomCode).emit('room-owner-is', currentOwnerID);
+    });
+
     this.socket.on('player-turn', (roomCode: string) => {
       let currentTurnID = this.verifyTurn(roomCode);
       if (currentTurnID === undefined) {
@@ -102,6 +107,11 @@ class SocketConnection {
       reply = `a sala ${roomCode} existe.`;
     }
     this.socket.emit('room-exists', reply);
+  }
+
+  verifyOwner(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    return currentRoom?.ownerId;
   }
 
   setInitialTurn(roomCode: string) {
