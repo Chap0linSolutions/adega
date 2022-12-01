@@ -13,12 +13,15 @@ export interface player {
   avatarSeed: string;
   beers: number;
   socketID: string;
+  currentTurn: boolean;
 }
+
 export interface RoomContent {
   players: player[];
   currentGame: Game | null;
   lastGameName: string | null;
   options: OptionsType;
+  ownerId: string | null;
 }
 
 class Store {
@@ -50,7 +53,7 @@ class Store {
 
     switch (gameName) {
       case 'O Escolhido':
-        //newGame = new OEscolhido(io, roomCode);
+        newGame = new OEscolhido(io, roomCode);
         break;
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
@@ -59,7 +62,7 @@ class Store {
         console.log('Erro! O jogo solicitado ainda não foi implementado.');
         return;
     }
-    let currentRoom = this.rooms.get(roomCode);
+    const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {
       currentRoom.currentGame = newGame;
       return;
@@ -77,6 +80,7 @@ class Store {
       options: {
         gamesList: defaultGameList,
       },
+      ownerId: null,
     };
   }
 }

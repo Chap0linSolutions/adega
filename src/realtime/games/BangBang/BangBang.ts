@@ -20,7 +20,6 @@ class BangBang extends Game {
 
   handleMessage(id: any, value: any, payload: any) {
     if (value === 'player_ready') {
-      console.log('Player ready');
       this.startGame(id);
     }
 
@@ -33,7 +32,7 @@ class BangBang extends Game {
   // Add players and Start game
   public startGame(id: any) {
     const player = this.runtimeStorage.rooms
-      .get(this.runningOnRoom)
+      .get(this.roomCode)
       ?.players.find((p: player) => {
         return p.socketID === id;
       });
@@ -49,16 +48,10 @@ class BangBang extends Game {
       shotTime: 0,
     });
 
-    const playersOnRoom = this.runtimeStorage.rooms.get(this.runningOnRoom)
-      ?.players.length;
-    console.log(`Players on room: ${playersOnRoom}`);
-    console.log(`Numbers of players: ${this.numberOfPlayers}`);
+    const playersOnRoom = this.runtimeStorage.rooms.get(this.roomCode)?.players
+      .length;
     if (this.numberOfPlayers === playersOnRoom) {
-      console.log(`Current number of players in game: ${this.numberOfPlayers}`);
-      console.log(`About to start timer on room ${this.runningOnRoom}`);
-      this.io
-        .to(this.runningOnRoom)
-        .emit('message', { message: 'start_timer' });
+      this.io.to(this.roomCode).emit('message', { message: 'start_timer' });
     }
   }
 
@@ -68,13 +61,12 @@ class BangBang extends Game {
 
     if (player) {
       player.shotTime = payload.time;
-      console.log(`Player ${player.id}'s time: ${player.shotTime}`);
 
       const playersRanking = this.playerGameData
         .filter((p) => !!p.shotTime)
         .sort((a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime);
 
-      this.io.to(this.runningOnRoom).emit('message', {
+      this.io.to(this.roomCode).emit('message', {
         message: 'bangbang_result',
         ranking: playersRanking,
       });
@@ -86,11 +78,12 @@ class BangBang extends Game {
       console.log(hasFired);
 
       if (hasFired) {
-        this.io.to(this.runningOnRoom).emit('message', {
+        this.io.to(this.roomCode).emit('message', {
           message: 'bangbang_ranking',
           ranking: playersRanking,
         });
 
+        this.addBeers(playersRanking);
         this.playerGameData = [];
         this.numberOfPlayers = 0;
       }
@@ -112,7 +105,7 @@ class BangBang extends Game {
         (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
       );
 
-      this.io.to(this.runningOnRoom).emit('message', {
+      this.io.to(this.roomCode).emit('message', {
         message: 'bangbang_ranking',
         ranking: playersRanking,
       });
@@ -120,6 +113,29 @@ class BangBang extends Game {
       this.playerGameData = [];
       this.numberOfPlayers = 0;
     }
+  }
+
+  addBeers(playersRanking: bangbangData[]) {
+    console.log('Acabou o tempo! Computando perdedor(es)...');
+    let slowestPlayers = [];
+
+    if (playersRanking[this.numberOfPlayers - 1].shotTime > -10000) {
+      slowestPlayers.push(playersRanking[this.numberOfPlayers - 1]);
+    } else {
+      slowestPlayers = playersRanking.filter(
+        (player) => player.shotTime <= -10000
+      );
+    }
+
+    slowestPlayers.forEach((slowestPlayer) => {
+      this.runtimeStorage?.rooms
+        .get(this.roomCode)
+        ?.players.forEach((player) => {
+          if (player.nickname === slowestPlayer.nickname) {
+            player.beers += 1;
+          }
+        });
+    });
   }
 }
 

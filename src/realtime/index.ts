@@ -32,6 +32,25 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('room-owner-is', (roomCode: string) => {
+      const currentOwnerID = this.verifyOwner(roomCode);
+      this.io.to(roomCode).emit('room-owner-is', currentOwnerID);
+    });
+
+    this.socket.on('player-turn', (roomCode: string) => {
+      let currentTurnID = this.verifyTurn(roomCode);
+      if (currentTurnID === undefined) {
+        console.log('Current turn not found! Setting owner as next player!');
+        this.setInitialTurn(roomCode);
+        currentTurnID = this.verifyTurn(roomCode);
+      }
+      this.io.to(roomCode).emit('player-turn', currentTurnID);
+    });
+
+    this.socket.on('update-turn', (roomCode: string) => {
+      this.updateTurn(roomCode);
+    });
+
     this.socket.on('lobby-update', (roomCode) => {
       const players = JSON.stringify(this.rooms.get(roomCode)?.players);
       this.io.to(roomCode).emit('lobby-update', players);
@@ -42,7 +61,7 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      //console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
+      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
     });
 
@@ -82,7 +101,7 @@ class SocketConnection {
   }
 
   joinRoom(roomCode: string) {
-    //console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
+    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     const players = this.rooms.get(roomCode);
     if (players) {
@@ -101,18 +120,70 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
+  verifyOwner(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    return currentRoom?.ownerId;
+  }
+
+  setInitialTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentOwner = currentRoom?.players.find(
+      (player) => player.socketID === currentRoom.ownerId
+    );
+    if (currentOwner) currentOwner.currentTurn = true;
+  }
+
+  verifyTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentTurn = currentRoom?.players.find(
+      (player) => player.currentTurn === true
+    );
+    return currentTurn?.socketID;
+  }
+
+  updateTurn(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    let currentTurnIndex = currentRoom?.players.findIndex(
+      (player) => player.currentTurn === true
+    );
+    if (currentTurnIndex != undefined && currentRoom) {
+      currentRoom.players[currentTurnIndex].currentTurn = false;
+      if (currentTurnIndex < currentRoom.players.length - 1) {
+        currentTurnIndex += 1;
+      } else {
+        currentTurnIndex = 0;
+      }
+    } else {
+      currentTurnIndex = 0;
+    }
+    if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
+    console.log('Next player is:');
+    console.log(
+      this.runtimeStorage.rooms
+        .get(roomCode)
+        ?.players.find((player) => player.currentTurn === true)?.nickname
+    );
+  }
+
   addPlayer(newPlayerData: string) {
     let index = -1;
     let beerCount = 0;
+    let currentTurn = false;
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
     const currentRoom = this.rooms.get(npd.roomCode);
+    if (currentRoom?.ownerId === null && currentRoom) {
+      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`);
+      currentRoom.ownerId = this.socket.id;
+      currentTurn = true;
+    }
     const players = currentRoom?.players;
-    let playerID = Math.floor(10000 * Math.random());
+    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
       players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket, não vamos adicionar novamente e sim atualizar o existente
+        //se já existir um player no jogo com o mesmo id de socket,
+        //não vamos adicionar novamente e sim atualizar o existente
         if (p.socketID === this.socket.id) {
           beerCount = p.beers;
           index = players.indexOf(p);
@@ -120,7 +191,7 @@ class SocketConnection {
       });
 
       if (index >= 0) {
-        //removendo dados antigos para colocar os novos no lugar (no caso de ser atualização do player)
+        // Player data update
         players.splice(index, 1);
       }
 
@@ -128,6 +199,7 @@ class SocketConnection {
         ...npd,
         beers: beerCount,
         playerID: playerID,
+        currentTurn: currentTurn,
       });
       this.rooms.delete(npd.roomCode);
       this.rooms.set(npd.roomCode, currentRoom);
@@ -137,11 +209,11 @@ class SocketConnection {
 
       console.log(`players atualmente na sala:${playersNames}\n`);
       this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
+      this.io.to(npd.roomCode).emit('room-owner-is', currentRoom.ownerId);
     }
   }
 
   sendMessage(message: string, room: string) {
-    //console.log('hey\n', room, message);
     this.io.to(room).emit('message', { message, room });
   }
 
@@ -155,15 +227,34 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          //console.log(`o jogador ${p.nickname} saiu.\n`);
+          console.log(`o jogador ${p.nickname} saiu.\n`);
         }
       });
     }
+
     this.rooms.get(targetRoom)?.players.splice(index, 1);
+
+    const currentRoom = this.rooms.get(targetRoom);
+    const currentPlayers = this.rooms.get(targetRoom)?.players;
+
+    if (
+      currentPlayers &&
+      currentRoom &&
+      this.rooms.get(targetRoom)?.players.length &&
+      !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
+    ) {
+      const newOwner = currentPlayers[0].socketID;
+      currentRoom.ownerId = newOwner;
+      console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
+      this.io.to(targetRoom).emit('room-owner-is', newOwner);
+    }
+
+    this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
     }
+
     this.io
       .to(targetRoom)
       .emit(
@@ -196,19 +287,26 @@ class SocketConnection {
     const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
     const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
 
-    const selectedGame = gamesList.find((game) => game.name === gameDraw)!;
-    const selectedGameNumber = gamesList.indexOf(selectedGame);
+    const selectedGame = gamesList.find((game) => game.name === gameDraw);
+    if (selectedGame) {
+      const selectedGameNumber = gamesList.indexOf(selectedGame);
 
-    room.options.gamesList[selectedGameNumber].counter += 1;
-    this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
-    console.log(
-      `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
-    );
+      room.options.gamesList[selectedGameNumber].counter += 1;
+      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+      console.log(
+        `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
+      );
+    }
 
     setTimeout(() => {
-      const gameName = Math.round(Math.random()) === 0 ? '/Vrum' : '/EuNunca'; //TODO botar o algoritmo real de seleção acima para rodar
-      this.handleMoving(roomCode, gameName);
-      //this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      //TODO: atualizar seleção do próximo jogo após a adição de todos os jogos da alfa
+      const random = Math.round(Math.random());
+      const nextRound =
+        random === 0
+          ? { url: '/OEscolhido', title: 'O Escolhido' }
+          : { url: '/BangBang', title: 'Bang Bang' };
+      this.handleMoving(roomCode, nextRound.url);
+      this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
     }, 5000);
   }
 

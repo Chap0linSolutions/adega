@@ -4,14 +4,14 @@ import Store from '../store';
 abstract class Game {
   runtimeStorage: Store;
   io: Server;
-  runningOnRoom: string;
+  roomCode: string;
   numberOfPlayers: number;
   abstract playerGameData: any;
 
   constructor(io: Server, room: string) {
     this.runtimeStorage = Store.getInstance();
     this.io = io;
-    this.runningOnRoom = room;
+    this.roomCode = room;
     this.numberOfPlayers = 0;
   }
 
