@@ -117,20 +117,14 @@ class BangBang extends Game {
 
   addBeers(playersRanking: bangbangData[]) {
     console.log('Acabou o tempo! Computando perdedor(es)...');
-    const slowestPlayers = [];
+    let slowestPlayers = [];
 
     if (playersRanking[this.numberOfPlayers - 1].shotTime > -10000) {
       slowestPlayers.push(playersRanking[this.numberOfPlayers - 1]);
     } else {
-      let i = this.numberOfPlayers - 1;
-      do {
-        if (playersRanking[i].shotTime <= -10000) {
-          slowestPlayers.push(playersRanking[i]);
-        } else {
-          i = -1;
-        }
-        i -= 1;
-      } while (i >= 0);
+      slowestPlayers = playersRanking.filter(
+        (player) => player.shotTime <= -10000
+      );
     }
 
     slowestPlayers.forEach((slowestPlayer) => {

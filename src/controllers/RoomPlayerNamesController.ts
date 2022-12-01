@@ -16,7 +16,7 @@ export default class RoomPlayerNameController {
 
       if (nameInUse) {
         console.log('Nome já em uso.');
-        res.status(400).send();
+        res.status(409).send();
       } else {
         console.log('Nome liberado.');
         res.status(200).send(true);
