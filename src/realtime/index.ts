@@ -300,13 +300,25 @@ class SocketConnection {
 
     setTimeout(() => {
       //TODO: atualizar seleção do próximo jogo após a adição de todos os jogos da alfa
-      const random = Math.round(Math.random());
-      const nextRound =
-        random === 0
-          ? { url: '/OEscolhido', title: 'O Escolhido' }
-          : { url: '/BangBang', title: 'Bang Bang' };
-      this.handleMoving(roomCode, nextRound.url);
+      let nextRound = {title: '', url: ''};
+      const random = Math.floor(4*Math.random());
+
+      switch(random){
+        case 0:
+          nextRound = { url: '/OEscolhido', title: 'O Escolhido' };
+          break;
+        case 1:
+          nextRound = { url: '/BangBang', title: 'Bang Bang' };
+          break;
+        case 2:
+          nextRound = {...nextRound, url: '/Vrum'};
+          break;
+        default:
+          nextRound = {...nextRound, url: '/EuNunca'}; 
+      }
+      
       this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
+      this.handleMoving(roomCode, nextRound.url);
     }, 5000);
   }
 

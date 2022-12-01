@@ -59,7 +59,7 @@ class Store {
         newGame = new BangBang(io, roomCode);
         break;
       default:
-        console.log('Erro! O jogo solicitado ainda não foi implementado.');
+        console.log('Este jogo é de carta simples, não sendo necessário iniciar nada no backend');
         return;
     }
     const currentRoom = this.rooms.get(roomCode);
