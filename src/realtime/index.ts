@@ -1,7 +1,7 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { gameList } from './games/GameOptions';
-
+import { EuNunca } from './games/EuNunca/EuNunca';
 class SocketConnection {
   socket: Socket;
   io: Server;
@@ -59,6 +59,17 @@ class SocketConnection {
         value.gameName,
         this.io
       );
+    });
+
+    this.socket.on('players-who-drank-are', (value) => {
+      const playersWhoDrank = JSON.parse(value.players);
+      const roomCode = value.roomCode;
+      this.updateBeers(roomCode, playersWhoDrank);
+    });
+
+    this.socket.on('eu-nunca-suggestions', (roomCode) => {
+      const suggestions = EuNunca.getSuggestions();
+      this.socket.emit('eu-nunca-suggestions', suggestions);
     });
 
     this.socket.on('message', (value) => {
@@ -195,9 +206,21 @@ class SocketConnection {
     );
 
     setTimeout(() => {
-      this.handleMoving(roomCode, '/BangBang');
-      this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
+      const gameName = Math.round(Math.random()) === 0 ? '/Vrum' : '/EuNunca'; //TODO botar o algoritmo real de seleção acima para rodar
+      this.handleMoving(roomCode, gameName);
+      //this.runtimeStorage.startGameOnRoom(roomCode, 'Bang Bang', this.io);
     }, 5000);
+  }
+
+  updateBeers(roomCode: string, playersWhoDrank: player[]) {
+    const room = this.rooms.get(roomCode)!;
+    playersWhoDrank.forEach((player: player) => {
+      room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+    });
+    console.log(`Sala ${roomCode} - Resumo do porre:`);
+    room.players.forEach((player) => {
+      console.log(`${player.nickname} - ${player.beers} cervejas`);
+    });
   }
 }
 
