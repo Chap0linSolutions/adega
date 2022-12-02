@@ -19,6 +19,6 @@ realtime(io);
 
 server.listen(PORT, () => {
   console.log(
-    'The application is listening ' + 'on port http://192.168.0.49:' + PORT
+    'The application is listening ' + 'on port http://localhost:' + PORT
   );
 });
