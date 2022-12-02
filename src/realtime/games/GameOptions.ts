@@ -1,4 +1,15 @@
-export const gameList = ['Eu Nunca', 'Roleta', 'Vrum', 'Bicho Bebe', 'Medusa'];
+export const gameList = [
+  'Bang Bang',
+  'Bicho Bebe',
+  'Buzz',
+  'C, S, Composto',
+  'Direita-Esquerda',
+  'Eu Nunca',
+  'Medusa',
+  'O Escolhido',
+  'Pensa Rápido', 
+  'Vrum',
+];
 
 export type GameListOptionType = {
   name: string;

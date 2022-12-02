@@ -299,28 +299,28 @@ class SocketConnection {
     }
 
     setTimeout(() => {
-      //TODO: atualizar seleção do próximo jogo após a adição de todos os jogos da alfa
-      let nextRound = {title: '', url: ''};
-      const random = Math.floor(4*Math.random());
-
-      switch(random){
-        case 0:
-          nextRound = { url: '/OEscolhido', title: 'O Escolhido' };
-          break;
-        case 1:
-          nextRound = { url: '/BangBang', title: 'Bang Bang' };
-          break;
-        case 2:
-          nextRound = {...nextRound, url: '/Vrum'};
-          break;
-        default:
-          nextRound = {...nextRound, url: '/EuNunca'}; 
-      }
-      
+      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
       this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
       this.handleMoving(roomCode, nextRound.url);
     }, 5000);
   }
+
+
+  URL(input: string){
+    const output = input
+    .replace('', '/')       //insere a barra
+    .replace(/ /g, '')      //remove espaços, acentos e caracteres especiais
+    .replace(/,/g, '')
+    .replace(/-/g, '')
+    .replace(/á/g, 'a')     
+    .replace(/é/g, 'e');
+
+    console.log(`${input} --> URL: ${output}`);
+    return output;
+  }
+
+
+
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
