@@ -249,6 +249,11 @@ class SocketConnection {
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
+    if(currentPlayers?.length === 1){
+      console.log('Não é possível jogar com apenas uma pessoa. Voltando para o lobby.');
+      return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
+    }
+
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
@@ -292,16 +297,20 @@ class SocketConnection {
       const selectedGameNumber = gamesList.indexOf(selectedGame);
 
       room.options.gamesList[selectedGameNumber].counter += 1;
-      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+      // this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
+      this.io.to(roomCode).emit('roulette-number-is', 2);   //TODO: excluir esta linha e descomentar a de cima
       console.log(
         `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
       );
     }
 
     setTimeout(() => {
-      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
-      this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
-      this.handleMoving(roomCode, nextRound.url);
+      // let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
+      // this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);          
+      // this.handleMoving(roomCode, nextRound.url);
+    
+      this.runtimeStorage.startGameOnRoom(roomCode, 'O Escolhido', this.io);      //TODO: excluir estas duas linhas e descomentar as três de cima    
+      this.handleMoving(roomCode, '/OEscolhido');
     }, 5000);
   }
 
