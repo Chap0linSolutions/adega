@@ -178,7 +178,8 @@ class SocketConnection {
     );
     if (index > -1) {
       console.log('O jogador está voltando à partida.');
-      currentRoom!.disconnectedPlayers.splice(index, 1);
+      const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
+      beerCount = returningPlayer[0].beers;
       index = -1;
     }
 
