@@ -9,14 +9,10 @@ class SocketConnection {
   currentRoom?: RoomContent;
   rooms: Map<string, RoomContent>;
 
-  nextGame: string;
-
   constructor(io: Server, socket: Socket) {
     this.io = io;
     this.socket = socket;
     this.runtimeStorage = Store.getInstance();
-
-    this.nextGame = '';
     this.rooms = this.runtimeStorage.rooms;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
@@ -72,12 +68,16 @@ class SocketConnection {
       this.handleNextGameSelection(roomCode);
     });
 
-    this.socket.on('start-game', (roomCode) => {
+    this.socket.on('start-game', (value) => {
       console.log(
-        `Sala ${roomCode} - solicitado o início do jogo ${this.nextGame}.`
+        `Sala ${value.roomCode} - solicitado o início do jogo ${value.nextGame}.`
       );
-      this.runtimeStorage.startGameOnRoom(roomCode, 'O Escolhido', this.io); //TODO colocar this.nextGame ao invés de 'O Escolhido'
-      this.handleMoving(roomCode, '/OEscolhido');
+      this.runtimeStorage.startGameOnRoom(
+        value.roomCode,
+        value.nextGame,
+        this.io
+      ); //TODO colocar this.nextGame ao invés de 'O Escolhido'
+      this.handleMoving(value.roomCode, this.URL(value.nextGame));
     });
 
     this.socket.on('players-who-drank-are', (value) => {
@@ -86,7 +86,7 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank);
     });
 
-    this.socket.on('eu-nunca-suggestions', (roomCode) => {
+    this.socket.on('eu-nunca-suggestions', () => {
       const suggestions = EuNunca.getSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
     });
@@ -248,12 +248,10 @@ class SocketConnection {
     const disconnectedPlayer = this.rooms
       .get(targetRoom)
       ?.players.splice(index, 1);
-    this.rooms
-      .get(targetRoom)
-      ?.disconnectedPlayers.push({
-        ...disconnectedPlayer![0],
-        currentTurn: false,
-      });
+    this.rooms.get(targetRoom)?.disconnectedPlayers.push({
+      ...disconnectedPlayer![0],
+      currentTurn: false,
+    });
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
@@ -311,13 +309,10 @@ class SocketConnection {
       const selectedGameNumber = gamesList.indexOf(selectedGame);
 
       room.options.gamesList[selectedGameNumber].counter += 1;
-      this.io
-        .to(roomCode)
-        .emit('roulette-number-is', 3 * Math.floor(Math.random())); //TODO voltar para selectedGameNumber
+      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber); //TODO voltar para selectedGameNumber
       console.log(
         `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
       );
-      this.nextGame = selectedGame.name;
     }
   }
 
