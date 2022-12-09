@@ -18,7 +18,7 @@ export default class RoomAccessController {
     // TODO: implement better DDoS protection method
     if (activeRooms.keys.length <= 500) {
       do {
-        newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
       } while (activeRooms.has(newRoomCode));
       activeRooms.set(newRoomCode, Store.emptyRoom());
       res.status(200).send(newRoomCode);

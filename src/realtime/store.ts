@@ -28,9 +28,7 @@ export interface RoomContent {
 class Store {
   private static instance: Store;
   private data: any = {};
-  public rooms: Map<string, RoomContent> = new Map([
-    ['123456', Store.emptyRoom()],
-  ]);
+  public rooms: Map<string, RoomContent> = new Map([]);
 
   static getInstance() {
     if (!Store.instance) {
