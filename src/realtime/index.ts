@@ -32,6 +32,10 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('get-player-name-by-id', (playerID) => {
+      this.getPlayerNameByID(playerID);
+    });
+
     this.socket.on('room-owner-is', (roomCode: string) => {
       const currentOwnerID = this.verifyOwner(roomCode);
       this.io.to(roomCode).emit('room-owner-is', currentOwnerID);
@@ -118,6 +122,25 @@ class SocketConnection {
       reply = `a sala ${roomCode} existe.`;
     }
     this.socket.emit('room-exists', reply);
+  }
+
+  getPlayerNameByID(playerID: string) {
+    let targetRoom = '';
+    let playerName = undefined;
+
+    for (const room of this.rooms) {
+      const players = room[1].players;
+      players.forEach((p: player) => {
+        if (p?.socketID === playerID) {
+          targetRoom = p.roomCode;
+          playerName = p.nickname;
+        }
+      });
+    }
+
+    if (playerName != undefined) {
+      this.io.to(targetRoom).emit('player-name', playerName);
+    }
   }
 
   verifyOwner(roomCode: string) {
@@ -299,28 +322,27 @@ class SocketConnection {
     }
 
     setTimeout(() => {
-      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
+      const nextRound = {
+        title: selectedGame!.name,
+        url: this.URL(selectedGame!.name),
+      };
       this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
       this.handleMoving(roomCode, nextRound.url);
     }, 5000);
   }
 
-
-  URL(input: string){
+  URL(input: string) {
     const output = input
-    .replace('', '/')       //insere a barra
-    .replace(/ /g, '')      //remove espaços, acentos e caracteres especiais
-    .replace(/,/g, '')
-    .replace(/-/g, '')
-    .replace(/á/g, 'a')     
-    .replace(/é/g, 'e');
+      .replace('', '/') //insere a barra
+      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
+      .replace(/,/g, '')
+      .replace(/-/g, '')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e');
 
     console.log(`${input} --> URL: ${output}`);
     return output;
   }
-
-
-
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
