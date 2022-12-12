@@ -1,5 +1,8 @@
 import express from 'express';
 
+import PingController from './controllers/PingController';
+const pingController = new PingController();
+
 import ExampleController from './controllers/ExampleController';
 const exampleController = new ExampleController();
 
@@ -10,6 +13,8 @@ import RoomPlayerNameController from './controllers/RoomPlayerNamesController';
 const roomPlayerNameController = new RoomPlayerNameController();
 
 const routes = express.Router();
+
+routes.get('/ping', pingController.pingPong);
 
 routes.get('/', (req, res) => {
   res.send('Bem vindo à adega!');
