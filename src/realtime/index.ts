@@ -76,7 +76,7 @@ class SocketConnection {
         value.roomCode,
         value.nextGame,
         this.io
-      ); //TODO colocar this.nextGame ao invés de 'O Escolhido'
+      ); 
       this.handleMoving(value.roomCode, this.URL(value.nextGame));
     });
 
