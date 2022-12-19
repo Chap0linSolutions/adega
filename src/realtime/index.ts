@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
-import { gameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 class SocketConnection {
   socket: Socket;
@@ -60,9 +59,13 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('selected-games-are', (value) => {
+      this.updateRoomGameSelection(value.roomCode, value.selectedGames);
+    });
+
     this.socket.on('games-update', (roomCode) => {
       console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
-      this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
+      this.sendRoomGames(roomCode);
     });
 
     this.socket.on('roulette-number-is', (roomCode: string) => {
@@ -86,7 +89,7 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank);
     });
 
-    this.socket.on('eu-nunca-suggestions', (roomCode) => {
+    this.socket.on('eu-nunca-suggestions', () => {
       const suggestions = EuNunca.getSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
     });
@@ -98,6 +101,33 @@ class SocketConnection {
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
     });
+  }
+
+  sendRoomGames(roomCode: string) {
+    const roomGames = this.rooms
+      .get(roomCode)!
+      .options.gamesList.map((game) => game.name);
+    this.socket.emit('games-update', roomGames);
+  }
+
+  updateRoomGameSelection(roomCode: string, selectedGames: string) {
+    const selection: string[] = JSON.parse(selectedGames);
+    const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
+    const newRoomGames = selection.map((gameName) => {
+      return {
+        name: gameName,
+        counter:
+          previousRoomGames.findIndex((game) => game.name === gameName) >= 0
+            ? previousRoomGames[
+                previousRoomGames.findIndex((game) => game.name === gameName)
+              ].counter
+            : 0,
+      };
+    });
+    this.rooms.get(roomCode)!.options.gamesList = newRoomGames;
+    console.log(`Sala ${roomCode} - Jogos escolhidos: `);
+    console.log((this.rooms.get(roomCode)!.options.gamesList = newRoomGames));
+    this.sendRoomGames(roomCode);
   }
 
   joinRoom(roomCode: string) {
@@ -299,28 +329,27 @@ class SocketConnection {
     }
 
     setTimeout(() => {
-      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
+      const nextRound = {
+        title: selectedGame!.name,
+        url: this.URL(selectedGame!.name),
+      };
       this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
       this.handleMoving(roomCode, nextRound.url);
     }, 5000);
   }
 
-
-  URL(input: string){
+  URL(input: string) {
     const output = input
-    .replace('', '/')       //insere a barra
-    .replace(/ /g, '')      //remove espaços, acentos e caracteres especiais
-    .replace(/,/g, '')
-    .replace(/-/g, '')
-    .replace(/á/g, 'a')     
-    .replace(/é/g, 'e');
+      .replace('', '/') //insere a barra
+      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
+      .replace(/,/g, '')
+      .replace(/-/g, '')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e');
 
     console.log(`${input} --> URL: ${output}`);
     return output;
   }
-
-
-
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
