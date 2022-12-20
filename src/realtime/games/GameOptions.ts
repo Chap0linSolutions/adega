@@ -7,7 +7,7 @@ export const gameList = [
   'Eu Nunca',
   'Medusa',
   'O Escolhido',
-  'Pensa Rápido', 
+  'Pensa Rápido',
   'Vrum',
 ];
 
