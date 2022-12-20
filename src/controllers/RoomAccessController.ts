@@ -44,10 +44,10 @@ export default class RoomAccessController {
         return res.status(200).send(true);
       } else {
         console.log('O usuário não estava na sala.');
-        return res.status(409).send();
+        return res.status(403).send();
       }
     }
     console.log('A sala não existe mais.');
-    return res.status(400).send();
+    return res.status(410).send();
   }
 }

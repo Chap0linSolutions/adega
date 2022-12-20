@@ -309,7 +309,7 @@ class SocketConnection {
       const selectedGameNumber = gamesList.indexOf(selectedGame);
 
       room.options.gamesList[selectedGameNumber].counter += 1;
-      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber); //TODO voltar para selectedGameNumber
+      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
       console.log(
         `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
       );
