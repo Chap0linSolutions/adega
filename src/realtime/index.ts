@@ -253,6 +253,13 @@ class SocketConnection {
       currentTurn: false,
     });
 
+    this.io
+      .to(targetRoom)
+      .emit(
+        'lobby-update',
+        JSON.stringify(this.rooms.get(targetRoom)?.players)
+      );
+
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       return this.rooms.delete(targetRoom);
@@ -281,13 +288,6 @@ class SocketConnection {
       console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
     }
-
-    this.io
-      .to(targetRoom)
-      .emit(
-        'lobby-update',
-        JSON.stringify(this.rooms.get(targetRoom)?.players)
-      );
   }
 
   handleGameMessage(room: string, value: any, payload: any) {
