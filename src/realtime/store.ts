@@ -18,6 +18,7 @@ export interface player {
 
 export interface RoomContent {
   players: player[];
+  disconnectedPlayers: player[];
   currentGame: Game | null;
   lastGameName: string | null;
   options: OptionsType;
@@ -27,9 +28,7 @@ export interface RoomContent {
 class Store {
   private static instance: Store;
   private data: any = {};
-  public rooms: Map<string, RoomContent> = new Map([
-    ['123456', Store.emptyRoom()],
-  ]);
+  public rooms: Map<string, RoomContent> = new Map([]);
 
   static getInstance() {
     if (!Store.instance) {
@@ -59,7 +58,9 @@ class Store {
         newGame = new BangBang(io, roomCode);
         break;
       default:
-        console.log('Este jogo é de carta simples, não sendo necessário iniciar nada no backend');
+        console.log(
+          'Este jogo é de carta simples, não sendo necessário iniciar nada no backend'
+        );
         return;
     }
     const currentRoom = this.rooms.get(roomCode);
@@ -75,6 +76,7 @@ class Store {
   static emptyRoom(): RoomContent {
     return {
       players: [],
+      disconnectedPlayers: [],
       currentGame: null,
       lastGameName: null,
       options: {
