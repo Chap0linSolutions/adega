@@ -253,6 +253,13 @@ class SocketConnection {
       currentTurn: false,
     });
 
+    this.io
+      .to(targetRoom)
+      .emit(
+        'lobby-update',
+        JSON.stringify(this.rooms.get(targetRoom)?.players)
+      );
+
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       return this.rooms.delete(targetRoom);
@@ -271,13 +278,16 @@ class SocketConnection {
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
-    currentRoom?.currentGame?.handleDisconnect(this.socket.id);
-    this.io
-      .to(targetRoom)
-      .emit(
-        'lobby-update',
-        JSON.stringify(this.rooms.get(targetRoom)?.players)
-      );
+    if(currentPlayers?.length === 1){
+      console.log('Não é possível jogar com apenas uma pessoa. Voltando para o lobby.');
+      return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
+    }
+
+    this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
+    if (this.rooms.get(targetRoom)?.players.length == 0) {
+      console.log('Room empty! Deleting from room list...');
+      this.rooms.delete(targetRoom);
+    }
   }
 
   handleGameMessage(room: string, value: any, payload: any) {
