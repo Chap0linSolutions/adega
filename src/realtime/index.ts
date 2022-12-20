@@ -297,20 +297,16 @@ class SocketConnection {
       const selectedGameNumber = gamesList.indexOf(selectedGame);
 
       room.options.gamesList[selectedGameNumber].counter += 1;
-      // this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
-      this.io.to(roomCode).emit('roulette-number-is', 2);   //TODO: excluir esta linha e descomentar a de cima
+      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
       console.log(
         `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
       );
     }
 
     setTimeout(() => {
-      // let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
-      // this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);          
-      // this.handleMoving(roomCode, nextRound.url);
-    
-      this.runtimeStorage.startGameOnRoom(roomCode, 'O Escolhido', this.io);      //TODO: excluir estas duas linhas e descomentar as três de cima    
-      this.handleMoving(roomCode, '/OEscolhido');
+      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
+      this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);          
+      this.handleMoving(roomCode, nextRound.url);
     }, 5000);
   }
 
