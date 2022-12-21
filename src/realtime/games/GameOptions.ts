@@ -3,11 +3,11 @@ export const gameList = [
   'Bicho Bebe',
   'Buzz',
   'C, S, Composto',
-  'Direita-Esquerda',
+  // 'Direita-Esquerda',
   'Eu Nunca',
   'Medusa',
   'O Escolhido',
-  'Pensa Rápido', 
+  'Pensa Rápido',
   'Vrum',
 ];
 
