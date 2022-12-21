@@ -31,6 +31,10 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
+    this.socket.on('get-player-name-by-id', (playerID) => {
+      this.getPlayerNameByID(playerID);
+    });
+
     this.socket.on('room-owner-is', (roomCode: string) => {
       const currentOwnerID = this.verifyOwner(roomCode);
       this.io.to(roomCode).emit('room-owner-is', currentOwnerID);
@@ -118,6 +122,25 @@ class SocketConnection {
       reply = `a sala ${roomCode} existe.`;
     }
     this.socket.emit('room-exists', reply);
+  }
+
+  getPlayerNameByID(playerID: string) {
+    let targetRoom = '';
+    let playerName = undefined;
+
+    for (const room of this.rooms) {
+      const players = room[1].players;
+      players.forEach((p: player) => {
+        if (p?.socketID === playerID) {
+          targetRoom = p.roomCode;
+          playerName = p.nickname;
+        }
+      });
+    }
+
+    if (playerName != undefined) {
+      this.io.to(targetRoom).emit('player-name', playerName);
+    }
   }
 
   verifyOwner(roomCode: string) {
