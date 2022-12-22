@@ -118,12 +118,13 @@ class SocketConnection {
     const selection: string[] = JSON.parse(selectedGames);
     const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
     const newRoomGames = selection.map((gameName) => {
+      const index = previousRoomGames.findIndex((game) => game.name === gameName);
       return {
         name: gameName,
         counter:
-          previousRoomGames.findIndex((game) => game.name === gameName) >= 0
+          index >= 0
             ? previousRoomGames[
-                previousRoomGames.findIndex((game) => game.name === gameName)
+                index
               ].counter
             : 0,
       };
