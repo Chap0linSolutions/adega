@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
-import { gameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 class SocketConnection {
   socket: Socket;
@@ -63,9 +62,13 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('selected-games-are', (value) => {
+      this.updateRoomGameSelection(value.roomCode, value.selectedGames);
+    });
+
     this.socket.on('games-update', (roomCode) => {
       console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
-      this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
+      this.sendRoomGames(roomCode);
     });
 
     this.socket.on('roulette-number-is', (roomCode: string) => {
@@ -102,6 +105,34 @@ class SocketConnection {
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
     });
+  }
+
+  sendRoomGames(roomCode: string) {
+    const roomGames = this.rooms
+      .get(roomCode)!
+      .options.gamesList.map((game) => game.name);
+    this.socket.emit('games-update', roomGames);
+  }
+
+  updateRoomGameSelection(roomCode: string, selectedGames: string) {
+    const selection: string[] = JSON.parse(selectedGames);
+    const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
+    const newRoomGames = selection.map((gameName) => {
+      const index = previousRoomGames.findIndex((game) => game.name === gameName);
+      return {
+        name: gameName,
+        counter:
+          index >= 0
+            ? previousRoomGames[
+                index
+              ].counter
+            : 0,
+      };
+    });
+    this.rooms.get(roomCode)!.options.gamesList = newRoomGames;
+    console.log(`Sala ${roomCode} - Jogos escolhidos: `);
+    console.log((this.rooms.get(roomCode)!.options.gamesList = newRoomGames));
+    this.sendRoomGames(roomCode);
   }
 
   joinRoom(roomCode: string) {
