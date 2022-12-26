@@ -30,4 +30,9 @@ routes.get(
   roomPlayerNameController.checkNameAvailabiliy
 );
 
+routes.get(
+  '/returningUser/:roomCode/:userName/:avatarSeed',
+  roomAccessController.checkIfUserWasThere
+);
+
 export default routes;

@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
-import { gameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 class SocketConnection {
   socket: Socket;
@@ -13,7 +12,6 @@ class SocketConnection {
     this.io = io;
     this.socket = socket;
     this.runtimeStorage = Store.getInstance();
-
     this.rooms = this.runtimeStorage.rooms;
 
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
@@ -30,6 +28,10 @@ class SocketConnection {
 
     this.socket.on('add-player', (newPlayerData) => {
       this.addPlayer(newPlayerData);
+    });
+
+    this.socket.on('get-player-name-by-id', (playerID) => {
+      this.getPlayerNameByID(playerID);
     });
 
     this.socket.on('room-owner-is', (roomCode: string) => {
@@ -60,9 +62,13 @@ class SocketConnection {
       this.disconnect();
     });
 
+    this.socket.on('selected-games-are', (value) => {
+      this.updateRoomGameSelection(value.roomCode, value.selectedGames);
+    });
+
     this.socket.on('games-update', (roomCode) => {
       console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
-      this.socket.emit('games-update', gameList); // TODO: get only the games inside the room.
+      this.sendRoomGames(roomCode);
     });
 
     this.socket.on('roulette-number-is', (roomCode: string) => {
@@ -71,13 +77,14 @@ class SocketConnection {
 
     this.socket.on('start-game', (value) => {
       console.log(
-        `Sala ${value.roomCode} - solicitado o início do jogo ${value.gameName}.`
+        `Sala ${value.roomCode} - solicitado o início do jogo ${value.nextGame}.`
       );
       this.runtimeStorage.startGameOnRoom(
         value.roomCode,
-        value.gameName,
+        value.nextGame,
         this.io
-      );
+      ); 
+      this.handleMoving(value.roomCode, this.URL(value.nextGame));
     });
 
     this.socket.on('players-who-drank-are', (value) => {
@@ -86,7 +93,7 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank);
     });
 
-    this.socket.on('eu-nunca-suggestions', (roomCode) => {
+    this.socket.on('eu-nunca-suggestions', () => {
       const suggestions = EuNunca.getSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
     });
@@ -98,6 +105,34 @@ class SocketConnection {
     this.socket.on('move-room-to', (value) => {
       this.handleMoving(value.roomCode, value.destination);
     });
+  }
+
+  sendRoomGames(roomCode: string) {
+    const roomGames = this.rooms
+      .get(roomCode)!
+      .options.gamesList.map((game) => game.name);
+    this.socket.emit('games-update', roomGames);
+  }
+
+  updateRoomGameSelection(roomCode: string, selectedGames: string) {
+    const selection: string[] = JSON.parse(selectedGames);
+    const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
+    const newRoomGames = selection.map((gameName) => {
+      const index = previousRoomGames.findIndex((game) => game.name === gameName);
+      return {
+        name: gameName,
+        counter:
+          index >= 0
+            ? previousRoomGames[
+                index
+              ].counter
+            : 0,
+      };
+    });
+    this.rooms.get(roomCode)!.options.gamesList = newRoomGames;
+    console.log(`Sala ${roomCode} - Jogos escolhidos: `);
+    console.log((this.rooms.get(roomCode)!.options.gamesList = newRoomGames));
+    this.sendRoomGames(roomCode);
   }
 
   joinRoom(roomCode: string) {
@@ -118,6 +153,25 @@ class SocketConnection {
       reply = `a sala ${roomCode} existe.`;
     }
     this.socket.emit('room-exists', reply);
+  }
+
+  getPlayerNameByID(playerID: string) {
+    let targetRoom = '';
+    let playerName = undefined;
+
+    for (const room of this.rooms) {
+      const players = room[1].players;
+      players.forEach((p: player) => {
+        if (p?.socketID === playerID) {
+          targetRoom = p.roomCode;
+          playerName = p.nickname;
+        }
+      });
+    }
+
+    if (playerName != undefined) {
+      this.io.to(targetRoom).emit('player-name', playerName);
+    }
   }
 
   verifyOwner(roomCode: string) {
@@ -169,11 +223,24 @@ class SocketConnection {
     let index = -1;
     let beerCount = 0;
     let currentTurn = false;
-    const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
 
+    const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
     const currentRoom = this.rooms.get(npd.roomCode);
+
+    index = currentRoom!.disconnectedPlayers.findIndex(
+      (player) => player.nickname === npd.nickname
+    );
+    if (index > -1) {
+      console.log('O jogador está voltando à partida.');
+      const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
+      beerCount = returningPlayer[0].beers;
+      index = -1;
+    }
+
     if (currentRoom?.ownerId === null && currentRoom) {
-      console.log(`User ${npd.socketID} created new room ${npd.roomCode}`);
+      console.log(
+        `O usuário ${npd.socketID} criou uma nova sala: ${npd.roomCode}`
+      );
       currentRoom.ownerId = this.socket.id;
       currentTurn = true;
     }
@@ -232,15 +299,31 @@ class SocketConnection {
       });
     }
 
-    this.rooms.get(targetRoom)?.players.splice(index, 1);
+    const disconnectedPlayer = this.rooms
+      .get(targetRoom)
+      ?.players.splice(index, 1);
+    this.rooms.get(targetRoom)?.disconnectedPlayers.push({
+      ...disconnectedPlayer![0],
+      currentTurn: false,
+    });
+
+    this.io
+      .to(targetRoom)
+      .emit(
+        'lobby-update',
+        JSON.stringify(this.rooms.get(targetRoom)?.players)
+      );
+
+    if (this.rooms.get(targetRoom)?.players.length == 0) {
+      console.log('Room empty! Deleting from room list...');
+      return this.rooms.delete(targetRoom);
+    }
 
     const currentRoom = this.rooms.get(targetRoom);
-    const currentPlayers = this.rooms.get(targetRoom)?.players;
+    const currentPlayers = currentRoom?.players;
 
     if (
       currentPlayers &&
-      currentRoom &&
-      this.rooms.get(targetRoom)?.players.length &&
       !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
     ) {
       const newOwner = currentPlayers[0].socketID;
@@ -249,18 +332,16 @@ class SocketConnection {
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
+    if(currentPlayers?.length === 1){
+      console.log('Não é possível jogar com apenas uma pessoa. Voltando para o lobby.');
+      return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
+    }
+
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
       this.rooms.delete(targetRoom);
     }
-
-    this.io
-      .to(targetRoom)
-      .emit(
-        'lobby-update',
-        JSON.stringify(this.rooms.get(targetRoom)?.players)
-      );
   }
 
   handleGameMessage(room: string, value: any, payload: any) {
@@ -297,30 +378,20 @@ class SocketConnection {
         `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
       );
     }
-
-    setTimeout(() => {
-      let nextRound = {title: selectedGame!.name, url: this.URL(selectedGame!.name)};
-      this.runtimeStorage.startGameOnRoom(roomCode, nextRound.title, this.io);
-      this.handleMoving(roomCode, nextRound.url);
-    }, 5000);
   }
 
-
-  URL(input: string){
+  URL(input: string) {
     const output = input
-    .replace('', '/')       //insere a barra
-    .replace(/ /g, '')      //remove espaços, acentos e caracteres especiais
-    .replace(/,/g, '')
-    .replace(/-/g, '')
-    .replace(/á/g, 'a')     
-    .replace(/é/g, 'e');
+      .replace('', '/') //insere a barra
+      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
+      .replace(/,/g, '')
+      .replace(/-/g, '')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e');
 
     console.log(`${input} --> URL: ${output}`);
     return output;
   }
-
-
-
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
