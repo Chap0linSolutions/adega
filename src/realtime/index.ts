@@ -295,6 +295,14 @@ class SocketConnection {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
           console.log(`o jogador ${p.nickname} saiu.\n`);
+
+          if(p.currentTurn == true && players.length > 0) {
+            this.updateTurn(targetRoom);
+            const currentTurnID = this.verifyTurn(targetRoom)
+            this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+            this.io.to(targetRoom).emit('player-turn', currentTurnID);
+            //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+          }
         }
       });
     }
