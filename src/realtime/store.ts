@@ -1,8 +1,10 @@
 import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
-import Game from './games/game';
+import Game from './games/Game';
 import { OptionsType, defaultGameList } from './games/GameOptions';
+import { EuNunca } from './games/EuNunca/EuNunca';
+import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -57,11 +59,12 @@ class Store {
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
         break;
+      case 'Eu Nunca':
+        newGame = new EuNunca(io, roomCode);
+        break;
       default:
-        console.log(
-          'Este jogo é de carta simples, não sendo necessário iniciar nada no backend'
-        );
-        return;
+        newGame = new SimpleCardGame(io, roomCode, gameName);
+        break;
     }
     const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {

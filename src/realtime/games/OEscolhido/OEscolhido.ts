@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import Game from '../game';
+import Game from '../Game';
 import { player } from '../../store';
 
 type votingSession = {
@@ -16,6 +16,8 @@ type mostVoted = {
 };
 
 class OEscolhido extends Game {
+  gameName = 'O Escolhido';
+  gameType = 'round';
   playerGameData: player[];
   session: votingSession[];
   mostVotedPlayers: mostVoted[];

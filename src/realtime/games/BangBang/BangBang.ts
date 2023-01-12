@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import Game from '../game';
+import Game from '../Game';
 import { player } from '../../store';
 
 type bangbangData = {
@@ -11,6 +11,8 @@ type bangbangData = {
 
 class BangBang extends Game {
   playerGameData: bangbangData[];
+  gameName = 'Bang Bang';
+  gameType = 'round';
 
   constructor(io: Server, room: string) {
     super(io, room);
