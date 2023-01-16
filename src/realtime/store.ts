@@ -1,8 +1,10 @@
+import { OptionsType, defaultGameList } from './games/GameOptions';
 import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
 import Game from './games/game';
-import { OptionsType, defaultGameList } from './games/GameOptions';
+import QuemSouEu from './games/QuemSouEu';
+
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -56,6 +58,9 @@ class Store {
         break;
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
+        break;
+      case 'Quem Sou Eu':
+        newGame = new QuemSouEu(io, roomCode);
         break;
       default:
         console.log(
