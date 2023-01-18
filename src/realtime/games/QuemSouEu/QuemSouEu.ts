@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import Game from '../game';
 import { player } from '../../store';
-import { animais } from './names';
+import { categorias } from './names';
 
 
 type whoPlayer = {
@@ -28,16 +28,11 @@ class QuemSouEu extends Game {
     }
     
     private setCategory(name: string){
-        switch(name){
-            case 'Animais':
-                this.names = animais; 
-                console.log(`Sala ${this.roomCode} - Categoria "${name}" definida.`);
-            break;
-            default:
-                console.log(`Sala ${this.roomCode} - Erro! A categoria "${name}" não existe.`)
-                this.names = undefined;
+        this.names = categorias.get(name);
+        if(this.names){
+            console.log(`Sala ${this.roomCode} - Categoria "${name}" definida.`);
             return;
-        } 
+        } console.log(`Sala ${this.roomCode} - Erro! A categoria "${name}" não existe.`);
     }
 
     private pickNameFor(player: string) {       
@@ -57,14 +52,6 @@ class QuemSouEu extends Game {
                 }
             }
         }
-    }
-
-    private leaveNameOf(player: string){
-        const playersNames = this.playersWithNames.map(p => p.player);
-        const i = playersNames.indexOf(player);
-        if(i >= 0){
-            return this.playersWithNames.splice(i, 1);
-        } return console.log(`Sala ${this.roomCode} - Erro! O jogador "${player}" não está com nenhum nome alocado para si.`);
     }
 
     private updatePlayersAndNames(){
@@ -88,6 +75,7 @@ class QuemSouEu extends Game {
         
         if(value === 'game-category-is'){  
             this.setCategory(payload);
+            this.io.to(this.roomCode).emit('game-category-is', payload);
             return;
         }
 
