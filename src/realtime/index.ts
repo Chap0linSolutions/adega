@@ -147,6 +147,8 @@ class SocketConnection {
 
     if (currentGame?.gameType == 'simple') {
       this.socket.emit('currently-playing-card-game', `/${gamePath}`);
+    } else if (currentGame?.gameType == 'round') {
+      this.io.to(roomCode).emit('message', { message: 'start_timer' });
     }
   }
 

@@ -11,6 +11,7 @@ type bangbangData = {
 
 class BangBang extends Game {
   playerGameData: bangbangData[];
+  numberOfPlayers = 0;
   gameName = 'Bang Bang';
   gameType = 'round';
 
@@ -114,6 +115,8 @@ class BangBang extends Game {
 
       this.playerGameData = [];
       this.numberOfPlayers = 0;
+    } else {
+      this.numberOfPlayers -= 1;
     }
   }
 
