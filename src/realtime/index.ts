@@ -83,7 +83,7 @@ class SocketConnection {
         value.roomCode,
         value.nextGame,
         this.io
-      ); 
+      );
       this.handleMoving(value.roomCode, this.URL(value.nextGame));
     });
 
@@ -118,15 +118,12 @@ class SocketConnection {
     const selection: string[] = JSON.parse(selectedGames);
     const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
     const newRoomGames = selection.map((gameName) => {
-      const index = previousRoomGames.findIndex((game) => game.name === gameName);
+      const index = previousRoomGames.findIndex(
+        (game) => game.name === gameName
+      );
       return {
         name: gameName,
-        counter:
-          index >= 0
-            ? previousRoomGames[
-                index
-              ].counter
-            : 0,
+        counter: index >= 0 ? previousRoomGames[index].counter : 0,
       };
     });
     this.rooms.get(roomCode)!.options.gamesList = newRoomGames;
@@ -295,6 +292,14 @@ class SocketConnection {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
           console.log(`o jogador ${p.nickname} saiu.\n`);
+
+          if (p.currentTurn == true && players.length > 0) {
+            this.updateTurn(targetRoom);
+            const currentTurnID = this.verifyTurn(targetRoom);
+            this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+            this.io.to(targetRoom).emit('player-turn', currentTurnID);
+            //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+          }
         }
       });
     }
@@ -332,8 +337,10 @@ class SocketConnection {
       this.io.to(targetRoom).emit('room-owner-is', newOwner);
     }
 
-    if(currentPlayers?.length === 1){
-      console.log('Não é possível jogar com apenas uma pessoa. Voltando para o lobby.');
+    if (currentPlayers?.length === 1) {
+      console.log(
+        'Não é possível jogar com apenas uma pessoa. Voltando para o lobby.'
+      );
       return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
     }
 
