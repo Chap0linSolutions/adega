@@ -12,10 +12,15 @@ class SimpleCardGame extends Game {
   }
 
   handleDisconnect(id: string): void {
-    console.log('Player disconnected');
+    console.log(`Player ${id} disconnected`);
   }
+
   handleMessage(id: any, value: any, payload: any): void {
-    console.log('Message received');
+    if (value === 'end-game') {
+      this.gameName = 'WhoDrank';
+
+      //TODO: implementar uma maneira de manter o ícone do jogo após reconexão
+    }
   }
 }
 

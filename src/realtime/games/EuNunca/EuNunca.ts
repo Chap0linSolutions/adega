@@ -56,10 +56,14 @@ class EuNunca extends Game {
   }
 
   handleDisconnect(id: string): void {
-    console.log('Player disconnected');
+    console.log(`Player ${id} disconnected`);
   }
   handleMessage(id: any, value: any, payload: any): void {
     console.log('Message received');
+    console.log(`id: ${id}\tvalue: ${value}\tpayload: ${payload}`);
+    //TODO: adicionar maneira de transmitir qual tela do eu nunca a pessoa estava
+
+    //TODO: transferir a lógica de enviar as sugestões para dentro do handle_message
   }
 }
 

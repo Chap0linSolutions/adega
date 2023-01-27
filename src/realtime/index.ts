@@ -140,14 +140,15 @@ class SocketConnection {
     const currentRoom = this.rooms.get(roomCode);
     const currentGame = currentRoom?.currentGame;
     const gameName = currentGame?.gameName;
-    const gamePath = gameName
+    const gameNameNormalized = gameName
       ?.normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(' ', '');
+      .replace(/\s/g, '')
+      .replace(/,/g, '');
 
-    if (currentGame?.gameType == 'simple') {
-      this.socket.emit('currently-playing-card-game', `/${gamePath}`);
-    } else if (currentGame?.gameType == 'round') {
+    this.socket.emit('current-game-is', gameNameNormalized);
+
+    if (currentGame?.gameName == 'Bang Bang') {
       this.io.to(roomCode).emit('message', { message: 'start_timer' });
     }
   }
