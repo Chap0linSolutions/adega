@@ -225,7 +225,9 @@ class SocketConnection {
       (player) => player.nickname === npd.nickname
     );
     if (index > -1) {
-      console.log(`Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`);
+      console.log(
+        `Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`
+      );
       const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
       beerCount = returningPlayer[0].beers;
       index = -1;
@@ -241,17 +243,17 @@ class SocketConnection {
     const players = currentRoom?.players;
 
     if (players) {
-      const existingPlayerIndex = players.findIndex((p: player) => p.socketID === this.socket.id);
-      
-      if(existingPlayerIndex > -1){
+      const existingPlayerIndex = players.findIndex(
+        (p: player) => p.socketID === this.socket.id
+      );
+
+      if (existingPlayerIndex > -1) {
         players[existingPlayerIndex] = {
           ...players[existingPlayerIndex],
           avatarSeed: npd.avatarSeed,
           nickname: npd.nickname,
-        }
-      }
-
-      else {
+        };
+      } else {
         players.push({
           ...npd,
           beers: beerCount,
@@ -263,9 +265,9 @@ class SocketConnection {
       let i = -1;
       this.rooms.set(npd.roomCode, {
         ...currentRoom,
-        players: players.map(p => {
+        players: players.map((p) => {
           i += 1;
-          return {...p, playerID: i} 
+          return { ...p, playerID: i };
         }),
       });
 
@@ -403,21 +405,20 @@ class SocketConnection {
     });
   }
 
-  sendPlayerList(roomCode: string){
+  sendPlayerList(roomCode: string) {
     const currentRoom = this.rooms.get(roomCode);
-    if(currentRoom){
-      const drunk = currentRoom.players.filter(p => p.beers > 0);
-      const sober = currentRoom.players.filter(p => p.beers === 0);
+    if (currentRoom) {
+      const drunk = currentRoom.players.filter((p) => p.beers > 0);
+      const sober = currentRoom.players.filter((p) => p.beers === 0);
 
-      drunk.sort((a, b) => b.beers - a.beers);        //people who drank are ranked by number of beers
-      sober.sort((a, b) => a.playerID - b.playerID);  //people who didn't get sorted by their IDs
+      drunk.sort((a, b) => b.beers - a.beers); //people who drank are ranked by number of beers
+      sober.sort((a, b) => a.playerID - b.playerID); //people who didn't get sorted by their IDs
 
       const players = drunk.concat(sober);
       this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
 }
-
 
 function realtime(io: Server) {
   io.on('connection', (socket: Socket) => {
