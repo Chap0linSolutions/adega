@@ -66,7 +66,6 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.sendRoomGames(roomCode);
     });
 
@@ -132,7 +131,6 @@ class SocketConnection {
   }
 
   joinRoom(roomCode: string) {
-    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     const players = this.rooms.get(roomCode);
     if (players) {
@@ -227,7 +225,7 @@ class SocketConnection {
       (player) => player.nickname === npd.nickname
     );
     if (index > -1) {
-      console.log('O jogador está voltando à partida.');
+      console.log(`Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`);
       const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
       beerCount = returningPlayer[0].beers;
       index = -1;
@@ -235,7 +233,7 @@ class SocketConnection {
 
     if (currentRoom?.ownerId === null && currentRoom) {
       console.log(
-        `O usuário ${npd.socketID} criou uma nova sala: ${npd.roomCode}`
+        `Sala ${npd.roomCode} - acabou de ser criada pelo usuário ${npd.socketID}.`
       );
       currentRoom.ownerId = this.socket.id;
       currentTurn = true;
@@ -414,15 +412,7 @@ class SocketConnection {
       drunk.sort((a, b) => b.beers - a.beers);        //people who drank are ranked by number of beers
       sober.sort((a, b) => a.playerID - b.playerID);  //people who didn't get sorted by their IDs
 
-      console.log('bêbados:');
-      console.log(drunk.map(p => {return {name: p.nickname, beers: p.beers}}));
-      console.log('sóbrios:');
-      console.log(sober.map(p => {return {name: p.nickname, beers: p.beers}}));
-      console.log('');
-
       const players = drunk.concat(sober);
-      console.log('todos os players:');
-      console.log(players.map(p => {return {name: p.nickname, beers: p.beers}}));
       this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
