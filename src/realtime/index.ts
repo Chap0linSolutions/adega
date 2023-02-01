@@ -54,8 +54,7 @@ class SocketConnection {
     });
 
     this.socket.on('lobby-update', (roomCode) => {
-      const players = JSON.stringify(this.rooms.get(roomCode)?.players);
-      this.io.to(roomCode).emit('lobby-update', players);
+      this.sendPlayerList(roomCode);
     });
 
     this.socket.on('disconnect', () => {
@@ -242,37 +241,37 @@ class SocketConnection {
       currentTurn = true;
     }
     const players = currentRoom?.players;
-    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
-      players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket,
-        //não vamos adicionar novamente e sim atualizar o existente
-        if (p.socketID === this.socket.id) {
-          beerCount = p.beers;
-          index = players.indexOf(p);
+      const existingPlayerIndex = players.findIndex((p: player) => p.socketID === this.socket.id);
+      
+      if(existingPlayerIndex > -1){
+        players[existingPlayerIndex] = {
+          ...players[existingPlayerIndex],
+          avatarSeed: npd.avatarSeed,
+          nickname: npd.nickname,
         }
-      });
-
-      if (index >= 0) {
-        // Player data update
-        players.splice(index, 1);
       }
 
-      currentRoom.players.push({
-        ...npd,
-        beers: beerCount,
-        playerID: playerID,
-        currentTurn: currentTurn,
+      else {
+        players.push({
+          ...npd,
+          beers: beerCount,
+          playerID: players.length,
+          currentTurn: currentTurn,
+        });
+      }
+
+      let i = -1;
+      this.rooms.set(npd.roomCode, {
+        ...currentRoom,
+        players: players.map(p => {
+          i += 1;
+          return {...p, playerID: i} 
+        }),
       });
-      this.rooms.delete(npd.roomCode);
-      this.rooms.set(npd.roomCode, currentRoom);
 
-      const playersNames: string[] = [];
-      players.forEach((player) => playersNames.push(` ${player.nickname}`));
-
-      console.log(`players atualmente na sala:${playersNames}\n`);
-      this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
+      this.sendPlayerList(npd.roomCode);
       this.io.to(npd.roomCode).emit('room-owner-is', currentRoom.ownerId);
     }
   }
@@ -312,12 +311,7 @@ class SocketConnection {
       currentTurn: false,
     });
 
-    this.io
-      .to(targetRoom)
-      .emit(
-        'lobby-update',
-        JSON.stringify(this.rooms.get(targetRoom)?.players)
-      );
+    this.sendPlayerList(targetRoom);
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
@@ -410,7 +404,30 @@ class SocketConnection {
       console.log(`${player.nickname} - ${player.beers} cervejas`);
     });
   }
+
+  sendPlayerList(roomCode: string){
+    const currentRoom = this.rooms.get(roomCode);
+    if(currentRoom){
+      const drunk = currentRoom.players.filter(p => p.beers > 0);
+      const sober = currentRoom.players.filter(p => p.beers === 0);
+
+      drunk.sort((a, b) => b.beers - a.beers);        //people who drank are ranked by number of beers
+      sober.sort((a, b) => a.playerID - b.playerID);  //people who didn't get sorted by their IDs
+
+      console.log('bêbados:');
+      console.log(drunk.map(p => {return {name: p.nickname, beers: p.beers}}));
+      console.log('sóbrios:');
+      console.log(sober.map(p => {return {name: p.nickname, beers: p.beers}}));
+      console.log('');
+
+      const players = drunk.concat(sober);
+      console.log('todos os players:');
+      console.log(players.map(p => {return {name: p.nickname, beers: p.beers}}));
+      this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
+    }
+  }
 }
+
 
 function realtime(io: Server) {
   io.on('connection', (socket: Socket) => {
