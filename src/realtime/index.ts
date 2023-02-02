@@ -367,11 +367,7 @@ class SocketConnection {
     if (!room.options.gamesList.find((game) => game.counter === 0)) {
       //checkToLower
       console.log('Todos os jogos possíveis com contador > 0.');
-      room.options.gamesList.forEach((game) => {
-        if (game.counter > 0) {
-          game.counter -= 1;
-        }
-      }); //lowerAllCounters
+      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
     }
 
     const fullGameList = room?.options.gamesList;
