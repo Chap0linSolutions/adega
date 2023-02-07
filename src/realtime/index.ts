@@ -17,6 +17,14 @@ class SocketConnection {
     console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
     this.socket.emit('connection', 'OK');
 
+    this.socket.on('game-is-running', (roomCode) => {
+      const currentGame = this.runtimeStorage.rooms.get(roomCode)?.currentGame;
+      if (currentGame != null) {
+        console.log('Jogador reconectou com jogo en andamento');
+        this.socket.emit('connection-ping-teste');
+      }
+    });
+
     this.socket.on('join-room', (roomCode, callback) => {
       const reply = this.joinRoom(roomCode);
       callback(reply);
