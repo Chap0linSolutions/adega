@@ -1,6 +1,8 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { EuNunca } from './games/EuNunca/EuNunca';
+import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
+
 class SocketConnection {
   socket: Socket;
   io: Server;
@@ -345,7 +347,7 @@ class SocketConnection {
 
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
-    currentGame?.handleMessage(this.socket.id, value, payload);
+    currentGame?.handleMessage(this.socket, value, payload);
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {

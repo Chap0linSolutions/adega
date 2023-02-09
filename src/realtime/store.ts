@@ -7,6 +7,7 @@ import OEscolhido from './games/OEscolhido';
 import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
+import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -70,6 +71,9 @@ class Store {
         break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
+        break;
+      case 'Jogo da Verdade':
+        newGame = new JogoDaVerdade(io, roomCode);
         break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);
