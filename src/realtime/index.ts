@@ -378,10 +378,13 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
-      console.log(`Sala ${roomCode} - Procedendo para a tela da Roleta. O jogo da sala foi redefinido para 'null'.`);
+    if (destination === '/SelectNextGame') {
+      console.log(
+        `Sala ${roomCode} - Procedendo para a tela da Roleta. O jogo da sala foi redefinido para 'null'.`
+      );
       this.rooms.get(roomCode)!.currentGame = null;
-    } this.io.to(roomCode).emit('room-is-moving-to', destination);
+    }
+    this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
 
   handleNextGameSelection(roomCode: string) {
