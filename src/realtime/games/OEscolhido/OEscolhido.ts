@@ -16,6 +16,8 @@ type mostVoted = {
 };
 
 class OEscolhido extends Game {
+  gameName = 'O Escolhido';
+  gameType = 'round';
   playerGameData: player[];
   session: votingSession[];
   mostVotedPlayers: mostVoted[];

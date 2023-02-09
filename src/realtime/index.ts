@@ -75,6 +75,10 @@ class SocketConnection {
       this.handleNextGameSelection(roomCode);
     });
 
+    this.socket.on('get-current-game-by-room', (roomCode: string) => {
+      this.getCurrentGameByRoom(roomCode);
+    });
+
     this.socket.on('start-game', (value) => {
       console.log(
         `Sala ${value.roomCode} - solicitado o início do jogo ${value.nextGame}.`
@@ -94,7 +98,7 @@ class SocketConnection {
     });
 
     this.socket.on('eu-nunca-suggestions', () => {
-      const suggestions = EuNunca.getSuggestions();
+      const suggestions = EuNunca.getStandardSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
     });
 
@@ -130,6 +134,23 @@ class SocketConnection {
     console.log(`Sala ${roomCode} - Jogos escolhidos: `);
     console.log((this.rooms.get(roomCode)!.options.gamesList = newRoomGames));
     this.sendRoomGames(roomCode);
+  }
+
+  getCurrentGameByRoom(roomCode: string) {
+    const currentRoom = this.rooms.get(roomCode);
+    const currentGame = currentRoom?.currentGame;
+    const gameName = currentGame?.gameName;
+    const gameNameNormalized = gameName
+      ?.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s/g, '')
+      .replace(/,/g, '');
+
+    this.socket.emit('current-game-is', gameNameNormalized);
+
+    if (currentGame?.gameName == 'Bang Bang') {
+      this.io.to(roomCode).emit('message', { message: 'start_timer' });
+    }
   }
 
   joinRoom(roomCode: string) {

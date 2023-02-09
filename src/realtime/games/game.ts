@@ -6,6 +6,8 @@ abstract class Game {
   io: Server;
   roomCode: string;
   numberOfPlayers: number;
+  abstract gameType: string;
+  abstract gameName: string;
   abstract playerGameData: any;
 
   constructor(io: Server, room: string) {
