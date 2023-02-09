@@ -370,21 +370,18 @@ class SocketConnection {
       room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
     }
 
-    const fullGameList = room?.options.gamesList;
-    const drawableOptions = fullGameList
+    const gamesList = room.options.gamesList;
+    const drawableOptions = gamesList
       .filter((game) => game.name !== room.lastGameName) //remove o último jogo que saiu
       .filter((game) => game.counter < 4); //filtra os jogos que já saíram 4x
     const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
-    const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
-    room.lastGameName = gameDraw;
+    const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
+    room.lastGameName = gameDraw.name;
 
-    const selectedGameIndex = fullGameList.indexOf(
-      drawableOptions.find((game) => game.name === gameDraw)!
-    );
-
-    room.options.gamesList[selectedGameIndex].counter += 1;
-    this.io.to(roomCode).emit('roulette-number-is', selectedGameIndex);
-    console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw}.`);
+    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    room.options.gamesList[selectedGame].counter += 1;
+    this.io.to(roomCode).emit('roulette-number-is', selectedGame);
+    console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);
   }
 
   URL(input: string) {
