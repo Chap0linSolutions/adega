@@ -7,6 +7,7 @@ type votingSession = {
   avatarSeed: string;
   hasVotedIn: player | undefined;
   votesReceived: number;
+  canVote: boolean;
 };
 
 type mostVoted = {
@@ -19,6 +20,16 @@ class OEscolhido extends Game {
   playerGameData: player[];
   session: votingSession[];
   mostVotedPlayers: mostVoted[];
+  noPlayer: player = {          //quem cair durante o jogo vai votar no noPlayer
+    playerID: -1,
+    roomCode: 'none',
+    currentlyPlaying: true,
+    nickname: 'a girl has no name',
+    avatarSeed: 'none',
+    beers: 0,
+    socketID: 'none',
+    currentTurn: false,
+  }
 
   constructor(io: Server, room: string) {
     super(io, room);
@@ -74,15 +85,7 @@ class OEscolhido extends Game {
       }
     });
 
-    let allVoted = true;
-
-    if (this.session.find((player) => player.hasVotedIn === undefined)) {
-      allVoted = false; //se ainda faltar alguém pra votar, paramos nesse return
-    }
-
-    if (allVoted) {
-      this.finishVoting(); //se todos já votaram, por outro lado, prosseguimos com os resultados
-    }
+    this.checkVotingStatus();   //verifica se já pode finalizar a votação - e o faz em caso afirmativo
   }
 
   beginVoting() {
@@ -98,6 +101,7 @@ class OEscolhido extends Game {
         avatarSeed: player.avatarSeed,
         hasVotedIn: undefined,
         votesReceived: 0,
+        canVote: true,
       });
     });
 
@@ -148,7 +152,27 @@ class OEscolhido extends Game {
   }
 
   handleDisconnect(id: string): void {
-    console.log(`User ${id} has disconnected`);
+    const disconnectedPlayers = this.runtimeStorage.rooms.get(this.roomCode)?.disconnectedPlayers;
+    const disconnectedPlayerName = disconnectedPlayers?.find(p => p.socketID === id)?.nickname;
+
+    if(disconnectedPlayerName){
+      const i = this.session.findIndex(player => player.nickname === disconnectedPlayerName);
+      console.log('O jogador ' + this.session[i].nickname + 'desconectou-se e não pode mais votar.');
+
+      if(this.session[i].hasVotedIn === undefined){
+        this.session[i].hasVotedIn = this.noPlayer;
+      }
+      
+      this.checkVotingStatus();
+    }
+  }
+
+  checkVotingStatus():void {      //finaliza a votação caso todos os jogadores disponíveis já tiverem votado
+    if (this.session.find((player) => player.hasVotedIn === undefined)) {
+      return; 
+    } else {
+      this.finishVoting(); //se todos já votaram, prosseguimos com os resultados
+    }
   }
 }
 
