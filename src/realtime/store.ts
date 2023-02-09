@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
-import Game from './games/Game';
+import Game from './games/game';
 import { OptionsType, defaultGameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';

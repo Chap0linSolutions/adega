@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import Game from '../Game';
+import Game from '../game';
 
 class SimpleCardGame extends Game {
   playerGameData = null; //this game doesn't need player data
@@ -18,8 +18,6 @@ class SimpleCardGame extends Game {
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'end-game') {
       this.gameName = 'WhoDrank';
-
-      //TODO: implementar uma maneira de manter o ícone do jogo após reconexão
     }
   }
 }

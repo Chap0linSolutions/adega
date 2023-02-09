@@ -98,7 +98,7 @@ class SocketConnection {
     });
 
     this.socket.on('eu-nunca-suggestions', () => {
-      const suggestions = EuNunca.getStandardSuggestions(); //TODO: decidir sobre a possível implementação de cartas personalizadas
+      const suggestions = EuNunca.getStandardSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
     });
 

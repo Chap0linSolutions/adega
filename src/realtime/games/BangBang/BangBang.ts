@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import Game from '../Game';
+import Game from '../game';
 import { player } from '../../store';
 
 type bangbangData = {
