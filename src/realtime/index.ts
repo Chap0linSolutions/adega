@@ -54,8 +54,7 @@ class SocketConnection {
     });
 
     this.socket.on('lobby-update', (roomCode) => {
-      const players = JSON.stringify(this.rooms.get(roomCode)?.players);
-      this.io.to(roomCode).emit('lobby-update', players);
+      this.sendPlayerList(roomCode);
     });
 
     this.socket.on('disconnect', () => {
@@ -67,7 +66,6 @@ class SocketConnection {
     });
 
     this.socket.on('games-update', (roomCode) => {
-      console.log(`solicitado o update na lista de jogos da sala ${roomCode}.`);
       this.sendRoomGames(roomCode);
     });
 
@@ -154,7 +152,6 @@ class SocketConnection {
   }
 
   joinRoom(roomCode: string) {
-    console.log(`${this.socket.id} tentou se conectar à sala ${roomCode}\n`);
     let reply = 'a sala não existe.';
     const players = this.rooms.get(roomCode);
     if (players) {
@@ -249,7 +246,9 @@ class SocketConnection {
       (player) => player.nickname === npd.nickname
     );
     if (index > -1) {
-      console.log('O jogador está voltando à partida.');
+      console.log(
+        `Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`
+      );
       const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
       beerCount = returningPlayer[0].beers;
       index = -1;
@@ -257,43 +256,41 @@ class SocketConnection {
 
     if (currentRoom?.ownerId === null && currentRoom) {
       console.log(
-        `O usuário ${npd.socketID} criou uma nova sala: ${npd.roomCode}`
+        `Sala ${npd.roomCode} - acabou de ser criada pelo usuário ${npd.socketID}.`
       );
       currentRoom.ownerId = this.socket.id;
       currentTurn = true;
     }
     const players = currentRoom?.players;
-    const playerID = Math.floor(10000 * Math.random());
 
     if (players) {
-      players.forEach((p: player) => {
-        //se já existir um player no jogo com o mesmo id de socket,
-        //não vamos adicionar novamente e sim atualizar o existente
-        if (p.socketID === this.socket.id) {
-          beerCount = p.beers;
-          index = players.indexOf(p);
-        }
-      });
+      const existingPlayerIndex = players.findIndex(
+        (p: player) => p.socketID === this.socket.id
+      );
 
-      if (index >= 0) {
-        // Player data update
-        players.splice(index, 1);
+      if (existingPlayerIndex > -1) {
+        players[existingPlayerIndex] = {
+          ...players[existingPlayerIndex],
+          avatarSeed: npd.avatarSeed,
+          nickname: npd.nickname,
+        };
+      } else {
+        players.push({
+          ...npd,
+          beers: beerCount,
+          playerID: players.length,
+          currentTurn: currentTurn,
+        });
       }
 
-      currentRoom.players.push({
-        ...npd,
-        beers: beerCount,
-        playerID: playerID,
-        currentTurn: currentTurn,
+      this.rooms.set(npd.roomCode, {
+        ...currentRoom,
+        players: players.map((p, index) => {
+          return { ...p, playerID: index };
+        }),
       });
-      this.rooms.delete(npd.roomCode);
-      this.rooms.set(npd.roomCode, currentRoom);
 
-      const playersNames: string[] = [];
-      players.forEach((player) => playersNames.push(` ${player.nickname}`));
-
-      console.log(`players atualmente na sala:${playersNames}\n`);
-      this.io.to(npd.roomCode).emit('lobby-update', JSON.stringify(players));
+      this.sendPlayerList(npd.roomCode);
       this.io.to(npd.roomCode).emit('room-owner-is', currentRoom.ownerId);
     }
   }
@@ -315,11 +312,14 @@ class SocketConnection {
           console.log(`o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
-            this.updateTurn(targetRoom);
-            const currentTurnID = this.verifyTurn(targetRoom);
-            this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
-            this.io.to(targetRoom).emit('player-turn', currentTurnID);
-            //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+            if(room[1].currentGame !== null){
+              this.updateTurn(targetRoom); 
+              const currentTurnID = this.verifyTurn(targetRoom);
+              this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+              room[1].currentGame = null;
+              this.io.to(targetRoom).emit('player-turn', currentTurnID);
+              //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+            }
           }
         }
       });
@@ -333,12 +333,7 @@ class SocketConnection {
       currentTurn: false,
     });
 
-    this.io
-      .to(targetRoom)
-      .emit(
-        'lobby-update',
-        JSON.stringify(this.rooms.get(targetRoom)?.players)
-      );
+    this.sendPlayerList(targetRoom);
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
@@ -378,10 +373,7 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if (destination === '/SelectNextGame') {
-      console.log(
-        `Sala ${roomCode} - Procedendo para a tela da Roleta. O jogo da sala foi redefinido para 'null'.`
-      );
+    if(destination === '/SelectNextGame'){
       this.rooms.get(roomCode)!.currentGame = null;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
@@ -427,6 +419,16 @@ class SocketConnection {
     playersWhoDrank.forEach((player: player) => {
       room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
     });
+  }
+
+  sendPlayerList(roomCode: string) {
+    const currentRoom = this.rooms.get(roomCode);
+    if (currentRoom) {
+      const players = currentRoom.players.sort((a, b) =>
+        b.beers - a.beers === 0 ? a.playerID - b.playerID : b.beers - a.beers
+      );
+      this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
+    }
   }
 }
 
