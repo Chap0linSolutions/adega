@@ -387,25 +387,22 @@ class SocketConnection {
 
     if (!room.options.gamesList.find((game) => game.counter === 0)) {
       //checkToLower
-      console.log('Todos os jogos com contador > 0.');
+      console.log('Todos os jogos possíveis com contador > 0.');
       room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
     }
 
-    const gamesList = room?.options.gamesList;
-    const drawableOptions = gamesList.filter((game) => game.counter < 4); //filtra jogos que já saíram 4x
+    const gamesList = room.options.gamesList;
+    const drawableOptions = gamesList
+      .filter((game) => game.name !== room.lastGameName) //remove o último jogo que saiu
+      .filter((game) => game.counter < 4); //filtra os jogos que já saíram 4x
     const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
-    const gameDraw = drawableOptions[gameDrawIndex].name; //pegando jogo sorteado
+    const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
+    room.lastGameName = gameDraw.name;
 
-    const selectedGame = gamesList.find((game) => game.name === gameDraw);
-    if (selectedGame) {
-      const selectedGameNumber = gamesList.indexOf(selectedGame);
-
-      room.options.gamesList[selectedGameNumber].counter += 1;
-      this.io.to(roomCode).emit('roulette-number-is', selectedGameNumber);
-      console.log(
-        `Próximo jogo: ${selectedGame.name} (escolhido ${selectedGame.counter} vezes.)`
-      );
-    }
+    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    room.options.gamesList[selectedGame].counter += 1;
+    this.io.to(roomCode).emit('roulette-number-is', selectedGame);
+    console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);
   }
 
   URL(input: string) {
@@ -416,8 +413,6 @@ class SocketConnection {
       .replace(/-/g, '')
       .replace(/á/g, 'a')
       .replace(/é/g, 'e');
-
-    console.log(`${input} --> URL: ${output}`);
     return output;
   }
 
@@ -425,10 +420,6 @@ class SocketConnection {
     const room = this.rooms.get(roomCode)!;
     playersWhoDrank.forEach((player: player) => {
       room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
-    });
-    console.log(`Sala ${roomCode} - Resumo do porre:`);
-    room.players.forEach((player) => {
-      console.log(`${player.nickname} - ${player.beers} cervejas`);
     });
   }
 }
