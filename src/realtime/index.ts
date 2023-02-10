@@ -315,11 +315,14 @@ class SocketConnection {
           console.log(`o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
-            this.updateTurn(targetRoom);
-            const currentTurnID = this.verifyTurn(targetRoom);
-            this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
-            this.io.to(targetRoom).emit('player-turn', currentTurnID);
-            //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+            if(room[1].currentGame !== null){
+              this.updateTurn(targetRoom); 
+              const currentTurnID = this.verifyTurn(targetRoom);
+              this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+              room[1].currentGame = null;
+              this.io.to(targetRoom).emit('player-turn', currentTurnID);
+              //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+            }
           }
         }
       });
@@ -378,6 +381,9 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
+    if(destination === '/SelectNextGame'){
+      this.rooms.get(roomCode)!.currentGame = null;
+    }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
 
