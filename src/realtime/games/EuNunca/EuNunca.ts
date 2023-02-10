@@ -29,7 +29,7 @@ class EuNunca extends Game {
     ' passei mais de dois dias sem tomar banho',
     ' usei Crocs',
     ' entrei de penetra em uma festa',
-    ' menti para alguém sobre meu nome',
+    ' menti para alguém sobre qual era meu nome',
     ' pesquisei meu próprio nome no Google',
     ' apaguei uma postagem porque ela flopou',
     ' dei conselho ruim para alguém de propósito',
@@ -42,6 +42,9 @@ class EuNunca extends Game {
     ' mandei a figurinha errada do Whatsapp',
     ' fiquei com alguém sem nem saber o nome',
     ' dancei sobre a mesa',
+    ' fui expulso da sala de aula',
+    ' consegui algo de graça dando em cima de alguém',
+    ' dormi no ônibus e perdi o ponto',
   ];
 
   constructor(io: Server, room: string) {
