@@ -43,7 +43,7 @@ class QuemSouEu extends Game {
 
   private pickNameFor(player: string) {
     if (this.names) {
-      if (this.playersWithNames.map((pwn) => pwn.player).includes(player)) {
+      if (this.playersWithNames.map((p) => p.player).includes(player)) {
         console.log(
           `Sala ${this.roomCode} - O jogador "${player}" já possui um nome.`
         );

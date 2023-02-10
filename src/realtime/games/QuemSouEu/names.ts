@@ -59,10 +59,9 @@ categorias.set('Animais', [
 
 categorias.set('Atores', [
   'Al Pacino',
-  'Arnold Schwazenegger',
+  'Arnold Schwarzenegger',
   'Adam Sandler',
   'Adriana Esteves',
-  'Al Pacino',
   'Amy Adams',
   'Aaron Paul',
   'Angelina Jolie',
