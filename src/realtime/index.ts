@@ -113,7 +113,7 @@ class SocketConnection {
     const roomGames = this.rooms
       .get(roomCode)!
       .options.gamesList.map((game) => game.name);
-    this.socket.emit('games-update', roomGames);
+    this.io.to(roomCode).emit('games-update', roomGames);
   }
 
   updateRoomGameSelection(roomCode: string, selectedGames: string) {
