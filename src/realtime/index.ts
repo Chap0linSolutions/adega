@@ -417,7 +417,15 @@ class SocketConnection {
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
     playersWhoDrank.forEach((player: player) => {
-      room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+      try{
+        room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+      } catch (e) {
+        try {
+          room.disconnectedPlayers.find((p) => p.nickname === player.nickname)!.beers += 1;
+        } catch (f) {
+          console.log(`Sala ${roomCode} - o jogador ${player.nickname} não está conectado nem disconectado (wtf, really)`);
+        }
+      }
     });
   }
 

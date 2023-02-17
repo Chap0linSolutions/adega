@@ -21,7 +21,6 @@ class OEscolhido extends Game {
   gameType = 'round';
   playerGameData: player[];
   session: votingSession[];
-  mostVotedPlayers: mostVoted[];
   noPlayer: player = {
     //quem cair durante o jogo vai votar no noPlayer
     playerID: -1,
@@ -39,7 +38,6 @@ class OEscolhido extends Game {
     this.playerGameData = this.runtimeStorage.rooms.get(room)
       ?.players as player[];
     this.session = [];
-    this.mostVotedPlayers = [];
     this.roomCode = room;
 
     this.beginVoting();
@@ -108,41 +106,29 @@ class OEscolhido extends Game {
       });
     });
 
-    console.log(`${players.length} jogadores se encontram neste jogo.\n`);
+    console.log(`Sala ${this.roomCode} - ${players.length} jogadores se encontram neste jogo.\n`);
     this.session = players;
   }
 
   finishVoting() {
-    let highestVoteCount = 0;
-    const mostVotedPlayers: mostVoted[] = [];
+    const currentRoom = this.runtimeStorage.rooms.get(this.roomCode);
+    const highestVoteCount = this.session
+      .sort((a, b) => b.votesReceived - a.votesReceived)
+      .at(0)?.votesReceived;
 
-    this.session.forEach((player) => {
-      //encontra maior número de votos
-      if (player.votesReceived > highestVoteCount) {
-        highestVoteCount = player.votesReceived;
+    const mostVoted = this.session
+      .filter(p => p.votesReceived === highestVoteCount)
+    
+    const names = mostVoted.map(p => p.nickname);
+
+    names.forEach(name => {
+      const i = currentRoom!.players.findIndex(p => p.nickname === name); 
+      if(i !== -1){
+        currentRoom!.players[i].beers += 1; 
+      } else {
+        const j = currentRoom!.disconnectedPlayers.findIndex(p => p.nickname === name);
+        currentRoom!.disconnectedPlayers[j].beers += 1;
       }
-    });
-
-    this.session.forEach((player) => {
-      //inclui os mais votados no respectivo vetor
-      if (player.votesReceived === highestVoteCount) {
-        mostVotedPlayers.push({
-          nickname: player.nickname,
-          avatarSeed: player.avatarSeed,
-          votes: player.votesReceived,
-        });
-      }
-    });
-
-    mostVotedPlayers.forEach((mostVotedPlayer) => {
-      this.playerGameData?.forEach((player) => {
-        if (
-          player.nickname === mostVotedPlayer.nickname &&
-          player.avatarSeed === mostVotedPlayer.avatarSeed
-        ) {
-          player.beers += 1;
-        }
-      });
     });
 
     console.log(
@@ -150,8 +136,7 @@ class OEscolhido extends Game {
     );
     this.io
       .to(this.roomCode)
-      .emit('vote-results', JSON.stringify(mostVotedPlayers));
-    this.mostVotedPlayers = [];
+      .emit('vote-results', JSON.stringify(mostVoted));
   }
 
   handleDisconnect(id: string): void {
@@ -167,9 +152,9 @@ class OEscolhido extends Game {
         (player) => player.nickname === disconnectedPlayerName
       );
       console.log(
-        'O jogador ' +
+        `Sala ${this.roomCode} - o jogador ` +
           this.session[i].nickname +
-          'desconectou-se e não pode mais votar.'
+          ' desconectou-se e não pode mais votar.'
       );
 
       if (this.session[i].hasVotedIn === undefined) {
