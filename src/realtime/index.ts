@@ -73,8 +73,12 @@ class SocketConnection {
       this.handleNextGameSelection(roomCode);
     });
 
-    this.socket.on('get-current-game-by-room', (roomCode: string) => {
-      this.getCurrentGameByRoom(roomCode);
+    this.socket.on('get-current-game-state-by-room', (roomCode: string) => {
+      let currentState = this.getCurrentGameByRoom(roomCode);
+      if (!currentState) {
+        currentState = this.getCurrentPageByRoom(roomCode);
+      }
+      this.socket.emit('current-game-state-is', currentState);
     });
 
     this.socket.on('start-game', (value) => {
@@ -137,18 +141,27 @@ class SocketConnection {
   getCurrentGameByRoom(roomCode: string) {
     const currentRoom = this.rooms.get(roomCode);
     const currentGame = currentRoom?.currentGame;
-    const gameName = currentGame?.gameName;
-    const gameNameNormalized = gameName
-      ?.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s/g, '')
-      .replace(/,/g, '');
+    const gameName = currentGame?.gameName ? currentGame.gameName : null;
+    const gameNameNormalized =
+      gameName == null
+        ? null
+        : gameName
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s/g, '')
+            .replace(/,/g, '');
 
-    this.socket.emit('current-game-is', gameNameNormalized);
-
-    if (currentGame?.gameName == 'Bang Bang') {
+    if (gameNameNormalized == 'BangBang') {
       this.io.to(roomCode).emit('message', { message: 'start_timer' });
     }
+    return gameNameNormalized;
+  }
+
+  getCurrentPageByRoom(roomCode: string) {
+    const currentRoom = this.rooms.get(roomCode);
+    return currentRoom?.currentPageState
+      ? currentRoom.currentPageState.replace('/', '')
+      : null;
   }
 
   joinRoom(roomCode: string) {
@@ -312,11 +325,14 @@ class SocketConnection {
           console.log(`o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
-            if(room[1].currentGame !== null){
-              this.updateTurn(targetRoom); 
+            if (room[1].currentGame !== null) {
+              this.updateTurn(targetRoom);
               const currentTurnID = this.verifyTurn(targetRoom);
-              this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+              this.io
+                .to(targetRoom)
+                .emit('room-is-moving-to', '/SelectNextGame');
               room[1].currentGame = null;
+              room[1].currentPageState = '/SelectNextGame';
               this.io.to(targetRoom).emit('player-turn', currentTurnID);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
@@ -373,8 +389,13 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
-      this.rooms.get(roomCode)!.currentGame = null;
+    const room = this.rooms.get(roomCode);
+    if (room) {
+      room.currentPageState = destination.toString();
+      console.log(`CURRENT SCREEN: ${room.currentPageState}`);
+      if (destination === '/SelectNextGame' || destination === '/Lobby') {
+        room.currentGame = null;
+      }
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
@@ -397,7 +418,7 @@ class SocketConnection {
     const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
     room.lastGameName = gameDraw.name;
 
-    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(roomCode).emit('roulette-number-is', selectedGame);
     console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);

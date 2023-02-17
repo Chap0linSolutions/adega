@@ -22,6 +22,7 @@ export interface RoomContent {
   players: player[];
   disconnectedPlayers: player[];
   currentGame: Game | null;
+  currentPageState: string;
   lastGameName: string | null;
   options: OptionsType;
   ownerId: string | null;
@@ -81,6 +82,7 @@ class Store {
       players: [],
       disconnectedPlayers: [],
       currentGame: null,
+      currentPageState: 'Lobby',
       lastGameName: null,
       options: {
         gamesList: defaultGameList,
