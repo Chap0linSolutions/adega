@@ -146,16 +146,21 @@ class JogoDaVerdade extends Game {
 
     return sugs;
   }
-
+  
   handleDisconnect(id: string): void {
     console.log('Player disconnected');
   }
 
   handleMessage(socket: any, value: any, payload: any): void {
-    if (value === 'truth-suggestions') {
+    if (value === 'get-suggestions') {
       console.log("Veio buscar as sugestões do Jogo da Verdade")
-      const suggestions = this.getSuggestions();
-      socket.emit('truth-suggestions', suggestions);
+      const savedSuggestions = this.getSuggestions();
+      this.io.to(this.roomCode).emit('get-suggestions', savedSuggestions);
+    }
+
+    if (value === 'show-suggestions') {
+      console.log('Revelando sugestões')
+      this.io.to(this.roomCode).emit('show-suggestions');
     }
   }
 }

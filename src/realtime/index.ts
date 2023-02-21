@@ -67,6 +67,11 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank);
     });
 
+    this.socket.on('current-player-drink', (value) => {
+      const roomCode = value.roomCode;
+      this.currentPlayerDrink(roomCode, value.qtdBeers);
+    });
+
     this.socket.on('eu-nunca-suggestions', () => {
       const suggestions = EuNunca.getStandardSuggestions();
       this.socket.emit('eu-nunca-suggestions', suggestions);
@@ -370,6 +375,12 @@ class SocketConnection {
         );
       }
     });
+  }
+
+  currentPlayerDrink(roomCode: string, qtdBeers: number) {
+    const room = this.rooms.get(roomCode)!;
+    room.players.find((p) => p.currentTurn)!.beers += qtdBeers;
+    console.log(`Sala ${roomCode} - Jogador da vez bebeu ${qtdBeers} de uma vez!`);
   }
 }
 
