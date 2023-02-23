@@ -30,23 +30,23 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
-    this.socket.on('get-player-name-by-id', (playerID) => {
-      this.getPlayerNameByID(playerID);
-    });
+    // this.socket.on('get-player-name-by-id', (playerID) => {    //não acho que precisamos mais disso
+    //   this.getPlayerNameByID(playerID);
+    // });
 
     this.socket.on('room-owner-is', (roomCode: string) => {
-      const currentOwnerID = this.verifyOwner(roomCode);
-      this.io.to(roomCode).emit('room-owner-is', currentOwnerID);
+      const owner = this.getOwner(roomCode);
+      this.io.to(roomCode).emit('room-owner-is', owner);
     });
 
-    this.socket.on('player-turn', (roomCode: string) => {
-      let currentTurnID = this.verifyTurn(roomCode);
-      if (currentTurnID === undefined) {
+    this.socket.on('player-turn-is', (roomCode: string) => {
+      let currentTurnName = this.getTurn(roomCode);
+      if (currentTurnName === undefined) {
         console.log('Current turn not found! Setting owner as next player!');
         this.setInitialTurn(roomCode);
-        currentTurnID = this.verifyTurn(roomCode);
+        currentTurnName = this.getTurn(roomCode);
       }
-      this.io.to(roomCode).emit('player-turn', currentTurnID);
+      this.io.to(roomCode).emit('player-turn-is', currentTurnName);
     });
 
     this.socket.on('update-turn', (roomCode: string) => {
@@ -170,28 +170,34 @@ class SocketConnection {
     this.socket.emit('room-exists', reply);
   }
 
-  getPlayerNameByID(playerID: string) {
-    let targetRoom = '';
-    let playerName = undefined;
+  // getPlayerNameByID(playerID: string) {       //não acho que precisamos mais dessa função; quem chamava ela não é mais necessário
+  //   let targetRoom = '';                      //e mesmo que seja, podemos refatorar para ela já pesquisar com o código da sala em mãos.
+  //   let playerName = undefined;               //Afinal, não consigo enxergar uma possibilidade de um player querer informações de todas as salas
 
-    for (const room of this.rooms) {
-      const players = room[1].players;
-      players.forEach((p: player) => {
-        if (p?.socketID === playerID) {
-          targetRoom = p.roomCode;
-          playerName = p.nickname;
-        }
-      });
-    }
+  //   for (const room of this.rooms) {
+  //     const players = room[1].players;
+  //     players.forEach((p: player) => {
+  //       if (p?.socketID === playerID) {
+  //         targetRoom = p.roomCode;
+  //         playerName = p.nickname;
+  //       }
+  //     });
+  //   }
 
-    if (playerName != undefined) {
-      this.io.to(targetRoom).emit('player-name', playerName);
-    }
-  }
+  //   if (playerName != undefined) {
+  //     this.io.to(targetRoom).emit('player-name', playerName);
+  //   }
+  // }
 
-  verifyOwner(roomCode: string) {
+  getOwner(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    return currentRoom?.ownerId;
+    if(currentRoom){
+      const owner = currentRoom.players
+        .filter(p => p.socketID === currentRoom.ownerId);
+
+      console.log(`Sala ${roomCode} - o Owner atual é ${owner[0].nickname}.`);
+      return owner[0].nickname;
+    }
   }
 
   setInitialTurn(roomCode: string) {
@@ -202,12 +208,16 @@ class SocketConnection {
     if (currentOwner) currentOwner.currentTurn = true;
   }
 
-  verifyTurn(roomCode: string) {
+  getTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    const currentTurn = currentRoom?.players.find(
-      (player) => player.currentTurn === true
-    );
-    return currentTurn?.socketID;
+    if(currentRoom){
+      const currentTurn = currentRoom.players.filter(
+        (player) => player.currentTurn === true
+      );
+      if(currentTurn.length > 0){
+        return currentTurn[0].nickname;
+      } return undefined;
+    }
   }
 
   updateTurn(roomCode: string) {
@@ -291,7 +301,7 @@ class SocketConnection {
       });
 
       this.sendPlayerList(npd.roomCode);
-      this.io.to(npd.roomCode).emit('room-owner-is', currentRoom.ownerId);
+      this.io.to(npd.roomCode).emit('room-owner-is', this.getOwner(npd.roomCode));
     }
   }
 
@@ -314,10 +324,10 @@ class SocketConnection {
           if (p.currentTurn == true && players.length > 0) {
             if(room[1].currentGame !== null){
               this.updateTurn(targetRoom); 
-              const currentTurnID = this.verifyTurn(targetRoom);
+              const currentTurnName = this.getTurn(targetRoom);
               this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
               room[1].currentGame = null;
-              this.io.to(targetRoom).emit('player-turn', currentTurnID);
+              this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
           }
@@ -347,16 +357,17 @@ class SocketConnection {
       currentPlayers &&
       !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
     ) {
-      const newOwner = currentPlayers[0].socketID;
-      currentRoom.ownerId = newOwner;
-      console.log(`New room owner is: ${this.rooms.get(targetRoom)?.ownerId}`);
-      this.io.to(targetRoom).emit('room-owner-is', newOwner);
+      const newOwner = currentPlayers[0];
+      currentRoom.ownerId = newOwner.socketID;
+      console.log(`New room owner is: ${newOwner.nickname}`);
+      this.io.to(targetRoom).emit('room-owner-is', newOwner.nickname);
     }
 
     if (currentPlayers?.length === 1) {
       console.log(
         'Não é possível jogar com apenas uma pessoa. Voltando para o lobby.'
       );
+      this.rooms.get(targetRoom)!.currentGame = null;
       return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
     }
 
