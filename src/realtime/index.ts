@@ -69,10 +69,6 @@ class SocketConnection {
       this.sendRoomGames(roomCode);
     });
 
-    this.socket.on('roulette-number-is', (roomCode: string) => {
-      //this.handleNextGameSelection(roomCode);
-    });
-
     this.socket.on('get-current-game-by-room', (roomCode: string) => {
       this.getCurrentGameByRoom(roomCode);
     });
@@ -140,8 +136,7 @@ class SocketConnection {
     const currentGame = currentRoom?.currentGame;
     const gameName = currentGame?.gameName;
     console.log(`gameName: ${gameName}`);
-    if(typeof gameName === 'string'){
-
+    if (typeof gameName === 'string') {
       const gameNameAsURL = this.URL(gameName);
       this.socket.emit('current-game-is', gameNameAsURL);
 
@@ -312,8 +307,8 @@ class SocketConnection {
           console.log(`o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
-            if(room[1].currentGame !== null){
-              this.updateTurn(targetRoom); 
+            if (room[1].currentGame !== null) {
+              this.updateTurn(targetRoom);
               const currentTurnID = this.verifyTurn(targetRoom);
               this.handleMoving(targetRoom, '/SelectNextGame');
               this.io.to(targetRoom).emit('player-turn', currentTurnID);
@@ -372,14 +367,12 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
-      this.runtimeStorage.startGameOnRoom(
-        roomCode,
-        'Roulette',
-        this.io
+    if (destination === '/SelectNextGame') {
+      this.runtimeStorage.startGameOnRoom(roomCode, 'Roulette', this.io);
+    } else if (destination === '/Lobby') {
+      console.log(
+        `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
       );
-    } else if(destination === '/Lobby'){
-      console.log(`Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`);
       this.rooms.get(roomCode)!.currentGame = null;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);

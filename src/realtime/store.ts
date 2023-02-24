@@ -7,8 +7,6 @@ import OEscolhido from './games/OEscolhido';
 import Game from './games/game';
 import Roulette from './games/Roulette';
 
-
-
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;

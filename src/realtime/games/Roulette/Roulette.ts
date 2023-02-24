@@ -30,7 +30,7 @@ class Roulette extends Game {
     const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
     room.lastGameName = gameDraw.name;
 
-    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(this.roomCode).emit('roulette-number-is', selectedGame);
     console.log(`Sala ${this.roomCode} - Próximo jogo: ${gameDraw.name}.`);
@@ -39,14 +39,14 @@ class Roulette extends Game {
   handleDisconnect(id: string): void {
     console.log(`Player ${id} disconnected`);
   }
-  handleMessage(id: any, value: any, payload: any): void {          
-    if(value === 'roulette-number-is'){
-        return this.handleNextGameSelection();
+  handleMessage(id: any, value: any, payload: any): void {
+    if (value === 'roulette-number-is') {
+      return this.handleNextGameSelection();
     }
-    console.log(`Sala ${this.roomCode} - Mensagem recebida: id: ${id}\tvalue: ${value}\tpayload: ${payload}`);
+    console.log(
+      `Sala ${this.roomCode} - Mensagem recebida: id: ${id}\tvalue: ${value}\tpayload: ${payload}`
+    );
   }
 }
 
 export { Roulette };
-
-
