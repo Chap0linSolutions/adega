@@ -73,8 +73,8 @@ class SocketConnection {
       this.handleNextGameSelection(roomCode);
     });
 
-    this.socket.on('get-current-game-by-room', (roomCode: string) => {
-      this.getCurrentGameByRoom(roomCode);
+    this.socket.on('get-current-state-by-room', (roomCode: string) => {
+      this.getCurrentStateByRoom(roomCode);
     });
 
     this.socket.on('start-game', (value) => {
@@ -134,20 +134,21 @@ class SocketConnection {
     this.sendRoomGames(roomCode);
   }
 
-  getCurrentGameByRoom(roomCode: string) {
+  getCurrentStateByRoom(roomCode: string) {
     const currentRoom = this.rooms.get(roomCode);
     const currentGame = currentRoom?.currentGame;
     const gameName = currentGame?.gameName;
-    const gameNameNormalized = gameName
-      ?.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s/g, '')
-      .replace(/,/g, '');
+    console.log(`gameName: ${gameName}`);
+    if (typeof gameName === 'string') {
+      const currentState = {
+        URL: this.URL(gameName),
+        page: currentRoom?.currentPage
+      }
+      this.socket.emit('current-state-is', JSON.stringify(currentState));
 
-    this.socket.emit('current-game-is', gameNameNormalized);
-
-    if (currentGame?.gameName == 'Bang Bang') {
-      this.io.to(roomCode).emit('message', { message: 'start_timer' });
+      if (gameName == 'Bang Bang') {
+        this.io.to(roomCode).emit('message', { message: 'start_timer' });
+      }
     }
   }
 
@@ -384,8 +385,17 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
-      this.rooms.get(roomCode)!.currentGame = null;
+    const currentRoom = this.rooms.get(roomCode);
+    if (destination === '/SelectNextGame') {
+      this.runtimeStorage.startGameOnRoom(roomCode, 'Roulette', this.io);
+    } else if (destination === '/Lobby') {
+      console.log(
+        `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
+      );
+      currentRoom!.currentGame = null;
+      currentRoom!.currentPage = null;
+    } else if(typeof destination === 'number'){
+      currentRoom!.currentPage = destination;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
