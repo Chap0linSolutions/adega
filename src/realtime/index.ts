@@ -315,8 +315,7 @@ class SocketConnection {
             if(room[1].currentGame !== null){
               this.updateTurn(targetRoom); 
               const currentTurnID = this.verifyTurn(targetRoom);
-              this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
-              room[1].currentGame = null;
+              this.handleMoving(targetRoom, '/SelectNextGame');
               this.io.to(targetRoom).emit('player-turn', currentTurnID);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
@@ -345,7 +344,7 @@ class SocketConnection {
 
     if (
       currentPlayers &&
-      !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
+      !currentPlayers?.find((player) => player.socketID == currentRoom?.ownerId)
     ) {
       const newOwner = currentPlayers[0].socketID;
       currentRoom.ownerId = newOwner;
