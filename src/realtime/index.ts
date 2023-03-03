@@ -211,27 +211,45 @@ class SocketConnection {
   }
 
   updateTurn(roomCode: string) {
-    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    let currentTurnIndex = currentRoom?.players.findIndex(
-      (player) => player.currentTurn === true
-    );
-    if (currentTurnIndex != undefined && currentRoom) {
-      currentRoom.players[currentTurnIndex].currentTurn = false;
-      if (currentTurnIndex < currentRoom.players.length - 1) {
-        currentTurnIndex += 1;
-      } else {
-        currentTurnIndex = 0;
-      }
-    } else {
-      currentTurnIndex = 0;
-    }
-    if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
+    const currentTurnIndex = this.getCurrentTurnIndex(roomCode);
+    const nextPlayer = this.getNextPlayer(roomCode, currentTurnIndex);
     console.log('Next player is:');
-    console.log(
-      this.runtimeStorage.rooms
-        .get(roomCode)
-        ?.players.find((player) => player.currentTurn === true)?.nickname
-    );
+    console.log(nextPlayer?.nickname);
+  }
+
+  getCurrentTurnIndex(roomCode: string) {
+    let currentTurnIndex = -1;
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    if (currentRoom) {
+      const currentPlayerPlaying = currentRoom.players.find(
+        (player) => player.currentTurn === true
+      );
+      if (currentPlayerPlaying) {
+        currentTurnIndex = currentRoom.playerOrder.findIndex(
+          (player) => player === currentPlayerPlaying?.nickname
+        );
+      }
+    }
+    return currentTurnIndex;
+  }
+
+  getNextPlayer(roomCode: string, currentTurnIndex: number) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    let nextTurnIndex = 0;
+    if (currentRoom) {
+      if (currentTurnIndex < currentRoom.playerOrder.length - 1) {
+        nextTurnIndex = currentTurnIndex + 1;
+      }
+      currentRoom.players.forEach((player) => {
+        player.nickname === currentRoom.playerOrder[nextTurnIndex]
+          ? (player.currentTurn = true)
+          : (player.currentTurn = false);
+      });
+
+      return currentRoom.players.find(
+        (player) => player.nickname === currentRoom.playerOrder[nextTurnIndex]
+      );
+    }
   }
 
   addPlayer(newPlayerData: string) {
@@ -281,6 +299,7 @@ class SocketConnection {
           playerID: players.length,
           currentTurn: currentTurn,
         });
+        this.updateTurnList(npd.roomCode);
       }
 
       this.rooms.set(npd.roomCode, {
@@ -312,10 +331,12 @@ class SocketConnection {
           console.log(`o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
-            if(room[1].currentGame !== null){
-              this.updateTurn(targetRoom); 
+            if (room[1].currentGame !== null) {
+              this.updateTurn(targetRoom);
               const currentTurnID = this.verifyTurn(targetRoom);
-              this.io.to(targetRoom).emit('room-is-moving-to', '/SelectNextGame');
+              this.io
+                .to(targetRoom)
+                .emit('room-is-moving-to', '/SelectNextGame');
               room[1].currentGame = null;
               this.io.to(targetRoom).emit('player-turn', currentTurnID);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
@@ -333,6 +354,7 @@ class SocketConnection {
       currentTurn: false,
     });
 
+    this.updateTurnList(targetRoom);
     this.sendPlayerList(targetRoom);
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
@@ -373,7 +395,7 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
+    if (destination === '/SelectNextGame') {
       this.rooms.get(roomCode)!.currentGame = null;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
@@ -397,7 +419,7 @@ class SocketConnection {
     const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
     room.lastGameName = gameDraw.name;
 
-    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(roomCode).emit('roulette-number-is', selectedGame);
     console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);
@@ -428,6 +450,17 @@ class SocketConnection {
         b.beers - a.beers === 0 ? a.playerID - b.playerID : b.beers - a.beers
       );
       this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
+    }
+  }
+
+  updateTurnList(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    if (currentRoom != undefined) {
+      currentRoom.playerOrder = [];
+      currentRoom.players.forEach((player) => {
+        currentRoom.playerOrder.push(player.nickname);
+      });
+      console.log(`\n\n\nNEW ORDER LIST:\n${currentRoom.playerOrder}\n\n\n\n`);
     }
   }
 }
