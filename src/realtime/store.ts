@@ -1,10 +1,12 @@
-import { Server } from 'socket.io';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
 import Game from './games/game';
+import Titanic from './games/Titanic';
+import { Server } from 'socket.io';
 import { OptionsType, defaultGameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
+
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -61,6 +63,9 @@ class Store {
         break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
+        break;
+      case 'Titanic':
+        newGame = new Titanic(io, roomCode);
         break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);
