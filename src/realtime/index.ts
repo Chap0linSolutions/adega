@@ -30,10 +30,6 @@ class SocketConnection {
       this.addPlayer(newPlayerData);
     });
 
-    // this.socket.on('get-player-name-by-id', (playerID) => {    //não acho que precisamos mais disso
-    //   this.getPlayerNameByID(playerID);
-    // });
-
     this.socket.on('room-owner-is', (roomCode: string) => {
       const owner = this.getOwner(roomCode);
       this.io.to(roomCode).emit('room-owner-is', owner);
@@ -170,25 +166,6 @@ class SocketConnection {
     }
     this.socket.emit('room-exists', reply);
   }
-
-  // getPlayerNameByID(playerID: string) {       //não acho que precisamos mais dessa função; quem chamava ela não é mais necessário
-  //   let targetRoom = '';                      //e mesmo que seja, podemos refatorar para ela já pesquisar com o código da sala em mãos.
-  //   let playerName = undefined;               //Afinal, não consigo enxergar uma possibilidade de um player querer informações de todas as salas
-
-  //   for (const room of this.rooms) {
-  //     const players = room[1].players;
-  //     players.forEach((p: player) => {
-  //       if (p?.socketID === playerID) {
-  //         targetRoom = p.roomCode;
-  //         playerName = p.nickname;
-  //       }
-  //     });
-  //   }
-
-  //   if (playerName != undefined) {
-  //     this.io.to(targetRoom).emit('player-name', playerName);
-  //   }
-  // }
 
   getOwner(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
@@ -437,15 +414,16 @@ class SocketConnection {
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
-    playersWhoDrank.forEach((player: player) => {
-      try{
-        room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
-      } catch (e) {
-        try {
+    playersWhoDrank.forEach((player: player) => { 
+      const targetPlayerIsConnected = room.players.find((p) => p.nickname === player.nickname)
+      try {
+        if(targetPlayerIsConnected){
+          room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+        } else {
           room.disconnectedPlayers.find((p) => p.nickname === player.nickname)!.beers += 1;
-        } catch (f) {
-          console.log(`Sala ${roomCode} - o jogador ${player.nickname} não está conectado nem disconectado (wtf, really)`);
         }
+      } catch (e){
+        console.log(`Sala ${roomCode} - o jogador ${player.nickname} não está conectado nem disconectado (wtf, really)`);
       }
     });
   }
