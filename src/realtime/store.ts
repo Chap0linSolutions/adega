@@ -7,7 +7,6 @@ import { OptionsType, defaultGameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
 
-
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
