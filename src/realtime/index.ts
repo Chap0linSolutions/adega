@@ -69,19 +69,6 @@ class SocketConnection {
       this.getCurrentStateByRoom(roomCode);
     });
 
-    this.socket.on('start-game', (value) => {
-      console.log(
-        `Sala ${value.roomCode} - solicitado o início do jogo ${value.nextGame}.`
-      );
-      this.runtimeStorage.startGameOnRoom(
-        value.roomCode,
-        value.nextGame,
-        this.io
-      );
-      const gameAsURL = this.URL(value.nextGame);
-      this.handleMoving(value.roomCode, gameAsURL);
-    });
-
     this.socket.on('players-who-drank-are', (value) => {
       const playersWhoDrank = JSON.parse(value.players);
       const roomCode = value.roomCode;
@@ -98,7 +85,7 @@ class SocketConnection {
     });
 
     this.socket.on('move-room-to', (value) => {
-      this.handleMoving(value.roomCode, value.destination);
+      handleMoving(this.io, value.roomCode, value.destination);
     });
   }
 
@@ -134,14 +121,10 @@ class SocketConnection {
     console.log(`gameName: ${gameName}`);
     if (typeof gameName === 'string') {
       const currentState = {
-        URL: this.URL(gameName),
+        URL: URL(gameName),
         page: currentRoom?.currentPage
       }
       this.socket.emit('current-state-is', JSON.stringify(currentState));
-
-      // if (gameName == 'Bang Bang') {
-      //   this.io.to(roomCode).emit('message', { message: 'start_timer' });
-      // }
     }
   }
 
@@ -304,7 +287,7 @@ class SocketConnection {
             if(room[1].currentGame !== null){
               this.updateTurn(targetRoom); 
               const currentTurnName = this.getTurn(targetRoom);
-              this.handleMoving(targetRoom, '/SelectNextGame');              
+              handleMoving(this.io, targetRoom, '/SelectNextGame');              
               this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
@@ -345,7 +328,7 @@ class SocketConnection {
       console.log(
         'Não é possível jogar com apenas uma pessoa. Voltando para o lobby.'
       );
-      return this.handleMoving(targetRoom, '/Lobby');
+      return handleMoving(this.io, targetRoom, '/Lobby');
     }
 
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
@@ -358,22 +341,6 @@ class SocketConnection {
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
     currentGame?.handleMessage(this.socket.id, value, payload);
-  }
-
-  handleMoving(roomCode: string, destination: string | number) {
-    const currentRoom = this.rooms.get(roomCode);
-    if (destination === '/SelectNextGame') {
-      this.runtimeStorage.startGameOnRoom(roomCode, 'Roulette', this.io);
-    } else if (destination === '/Lobby') {
-      console.log(
-        `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
-      );
-      currentRoom!.currentGame = null;
-      currentRoom!.currentPage = null;
-    } else if(typeof destination === 'number'){
-      currentRoom!.currentPage = destination;
-    }
-    this.io.to(roomCode).emit('room-is-moving-to', destination);
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
@@ -401,17 +368,6 @@ class SocketConnection {
       this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
     }
   }
-
-  URL(input: string) {
-    const output = input
-      .replace('', '/') //insere a barra
-      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
-      .replace(/,/g, '')
-      .replace(/-/g, '')
-      .replace(/á/g, 'a')
-      .replace(/é/g, 'e');
-    return output;
-  }
 }
 
 function realtime(io: Server) {
@@ -421,3 +377,31 @@ function realtime(io: Server) {
 }
 
 export default realtime;
+
+export const URL = (input: string) => {
+  const output = input
+    .replace('', '/') //insere a barra
+    .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
+    .replace(/,/g, '')
+    .replace(/-/g, '')
+    .replace(/á/g, 'a')
+    .replace(/é/g, 'e');
+  return output;
+}
+
+export const handleMoving = (io: Server, roomCode: string, destination: string | number) => {
+  const runtimeStorage = Store.getInstance();
+  const currentRoom = runtimeStorage.rooms.get(roomCode);
+  if (destination === '/SelectNextGame') {
+    runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
+  } else if (destination === '/Lobby') {
+    console.log(
+      `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
+    );
+    currentRoom!.currentGame = null;
+    currentRoom!.currentPage = null;
+  } else if(typeof destination === 'number'){
+    currentRoom!.currentPage = destination;
+  }
+  io.to(roomCode).emit('room-is-moving-to', destination);
+}

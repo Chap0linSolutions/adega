@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import Game from '../game';
+import { URL, handleMoving } from '../../index'
 
 class Roulette extends Game {
   playerGameData: any;
@@ -42,6 +43,17 @@ class Roulette extends Game {
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'roulette-number-is') {
       return this.handleNextGameSelection();
+    } else if(value === 'start-game') {
+        console.log(
+          `Sala ${this.roomCode} - solicitado o início do jogo ${payload}.`
+        );
+        this.runtimeStorage.startGameOnRoom(
+          this.roomCode,
+          payload,
+          this.io
+        );
+        const gameAsURL = URL(payload);
+        return handleMoving(this.io, this.roomCode, gameAsURL);
     }
     console.log(
       `Sala ${this.roomCode} - Mensagem recebida: id: ${id}\tvalue: ${value}\tpayload: ${payload}`
