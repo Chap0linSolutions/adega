@@ -69,10 +69,6 @@ class SocketConnection {
       this.sendRoomGames(roomCode);
     });
 
-    this.socket.on('roulette-number-is', (roomCode: string) => {
-      this.handleNextGameSelection(roomCode);
-    });
-
     this.socket.on('get-current-game-by-room', (roomCode: string) => {
       this.getCurrentGameByRoom(roomCode);
     });
@@ -86,7 +82,8 @@ class SocketConnection {
         value.nextGame,
         this.io
       );
-      this.handleMoving(value.roomCode, this.URL(value.nextGame));
+      const gameAsURL = this.URL(value.nextGame);
+      this.handleMoving(value.roomCode, gameAsURL);
     });
 
     this.socket.on('players-who-drank-are', (value) => {
@@ -138,16 +135,14 @@ class SocketConnection {
     const currentRoom = this.rooms.get(roomCode);
     const currentGame = currentRoom?.currentGame;
     const gameName = currentGame?.gameName;
-    const gameNameNormalized = gameName
-      ?.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s/g, '')
-      .replace(/,/g, '');
+    console.log(`gameName: ${gameName}`);
+    if (typeof gameName === 'string') {
+      const gameNameAsURL = this.URL(gameName);
+      this.socket.emit('current-game-is', gameNameAsURL);
 
-    this.socket.emit('current-game-is', gameNameNormalized);
-
-    if (currentGame?.gameName == 'Bang Bang') {
-      this.io.to(roomCode).emit('message', { message: 'start_timer' });
+      if (gameName == 'Bang Bang') {
+        this.io.to(roomCode).emit('message', { message: 'start_timer' });
+      }
     }
   }
 
@@ -315,10 +310,7 @@ class SocketConnection {
             if (room[1].currentGame !== null) {
               this.updateTurn(targetRoom);
               const currentTurnID = this.verifyTurn(targetRoom);
-              this.io
-                .to(targetRoom)
-                .emit('room-is-moving-to', '/SelectNextGame');
-              room[1].currentGame = null;
+              this.handleMoving(targetRoom, '/SelectNextGame');
               this.io.to(targetRoom).emit('player-turn', currentTurnID);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
@@ -347,7 +339,7 @@ class SocketConnection {
 
     if (
       currentPlayers &&
-      !currentPlayers?.find((owner) => owner.socketID == currentRoom?.ownerId)
+      !currentPlayers?.find((player) => player.socketID == currentRoom?.ownerId)
     ) {
       const newOwner = currentPlayers[0].socketID;
       currentRoom.ownerId = newOwner;
@@ -359,7 +351,7 @@ class SocketConnection {
       console.log(
         'Não é possível jogar com apenas uma pessoa. Voltando para o lobby.'
       );
-      return this.io.to(targetRoom).emit('room-is-moving-to', '/Lobby');
+      return this.handleMoving(targetRoom, '/Lobby');
     }
 
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
@@ -376,44 +368,14 @@ class SocketConnection {
 
   handleMoving(roomCode: string, destination: string | number) {
     if (destination === '/SelectNextGame') {
+      this.runtimeStorage.startGameOnRoom(roomCode, 'Roulette', this.io);
+    } else if (destination === '/Lobby') {
+      console.log(
+        `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
+      );
       this.rooms.get(roomCode)!.currentGame = null;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
-  }
-
-  handleNextGameSelection(roomCode: string) {
-    const room = this.rooms.get(roomCode);
-    if (!room) return;
-
-    if (!room.options.gamesList.find((game) => game.counter === 0)) {
-      //checkToLower
-      console.log('Todos os jogos possíveis com contador > 0.');
-      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
-    }
-
-    const gamesList = room.options.gamesList;
-    const drawableOptions = gamesList
-      .filter((game) => game.name !== room.lastGameName) //remove o último jogo que saiu
-      .filter((game) => game.counter < 4); //filtra os jogos que já saíram 4x
-    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
-    const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
-    room.lastGameName = gameDraw.name;
-
-    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
-    room.options.gamesList[selectedGame].counter += 1;
-    this.io.to(roomCode).emit('roulette-number-is', selectedGame);
-    console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);
-  }
-
-  URL(input: string) {
-    const output = input
-      .replace('', '/') //insere a barra
-      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
-      .replace(/,/g, '')
-      .replace(/-/g, '')
-      .replace(/á/g, 'a')
-      .replace(/é/g, 'e');
-    return output;
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
@@ -431,6 +393,17 @@ class SocketConnection {
       );
       this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
     }
+  }
+
+  URL(input: string) {
+    const output = input
+      .replace('', '/') //insere a barra
+      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
+      .replace(/,/g, '')
+      .replace(/-/g, '')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e');
+    return output;
   }
 }
 

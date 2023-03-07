@@ -1,12 +1,12 @@
-import BangBang from './games/BangBang';
-import OEscolhido from './games/OEscolhido';
-import Game from './games/game';
-import Titanic from './games/Titanic';
 import { Server } from 'socket.io';
 import { OptionsType, defaultGameList } from './games/GameOptions';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
-
+import BangBang from './games/BangBang';
+import OEscolhido from './games/OEscolhido';
+import Game from './games/game';
+import Roulette from './games/Roulette';
+import Titanic from './games/Titanic';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
@@ -54,6 +54,9 @@ class Store {
     let newGame = null;
 
     switch (gameName) {
+      case 'Roulette':
+        newGame = new Roulette(io, roomCode);
+        break;
       case 'O Escolhido':
         newGame = new OEscolhido(io, roomCode);
         break;
