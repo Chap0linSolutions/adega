@@ -180,6 +180,7 @@ class SocketConnection {
     let index = -1;
     let beerCount = 0;
     let currentTurn = false;
+    let returningPlayer = false;
 
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
     const currentRoom = this.rooms.get(npd.roomCode);
@@ -191,14 +192,15 @@ class SocketConnection {
       console.log(
         `Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`
       );
-      const returningPlayer = currentRoom!.disconnectedPlayers.splice(index, 1);
-      beerCount = returningPlayer[0].beers;
+      returningPlayer = true;
+      const whosReturning = currentRoom!.disconnectedPlayers.splice(index, 1);
+      beerCount = whosReturning[0].beers;
       index = -1;
     }
 
     if (currentRoom?.ownerId === null && currentRoom) {
       console.log(
-        `Sala ${npd.roomCode} - acabou de ser criada pelo usuário ${npd.socketID}.`
+        `Sala ${npd.roomCode} - acabou de ser criada pelo usuário ${npd.nickname}.`
       );
       currentRoom.ownerId = this.socket.id;
       currentTurn = true;
@@ -234,6 +236,15 @@ class SocketConnection {
 
       sendPlayerList(this.io, npd.roomCode);
       this.io.to(npd.roomCode).emit('room-owner-is', this.getOwner(npd.roomCode));
+      
+      if(returningPlayer && currentRoom.currentGame?.gameName === 'Who Drank'){
+        const canGetBack = currentRoom.currentGame.playerGameData
+          .find((p:player) => p.nickname === npd.nickname);
+        if(canGetBack){
+          console.log(`Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`);
+          return this.socket.emit('room-is-moving-to', '/WhoDrank');
+        } console.log(`Sala ${npd.roomCode} - O jogador deve aguardar a próxima rodada.`);
+      }
     }
   }
 
