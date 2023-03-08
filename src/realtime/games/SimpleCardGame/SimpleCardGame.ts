@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { handleMoving } from '../../index';
 import Game from '../game';
 
 class SimpleCardGame extends Game {
@@ -9,6 +10,11 @@ class SimpleCardGame extends Game {
   constructor(io: Server, room: string, game: string) {
     super(io, room);
     this.gameName = game;
+    this.begin();
+  }
+
+  begin(){
+    console.log(`${this.gameName}!`);
   }
 
   handleDisconnect(id: string): void {
@@ -16,8 +22,11 @@ class SimpleCardGame extends Game {
   }
 
   handleMessage(id: any, value: any, payload: any): void {
-    if (value === 'end-game') {
-      this.gameName = 'WhoDrank';
+    if(value === 'end-game'){
+      if(this.gameName === 'Who Drank'){
+        return handleMoving(this.io, this.roomCode, '/SelectNextGame');
+      }
+      return handleMoving(this.io, this.roomCode, '/WhoDrank');
     }
   }
 }

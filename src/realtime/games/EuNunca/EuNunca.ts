@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { handleMoving } from '../../index';
 import Game from '../game';
 
 class EuNunca extends Game {
@@ -59,11 +60,12 @@ class EuNunca extends Game {
     console.log(`Player ${id} disconnected`);
   }
   handleMessage(id: any, value: any, payload: any): void {
+    if(value === 'end-game'){
+      handleMoving(this.io, this.roomCode, '/WhoDrank');
+    }
     console.log('Message received');
     console.log(`id: ${id}\tvalue: ${value}\tpayload: ${payload}`);
-    //TODO: adicionar maneira de transmitir qual tela do eu nunca a pessoa estava
 
-    //TODO: transferir a lógica de enviar as sugestões para dentro do handle_message
   }
 }
 

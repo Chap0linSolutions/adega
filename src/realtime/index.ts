@@ -35,22 +35,12 @@ class SocketConnection {
       this.io.to(roomCode).emit('room-owner-is', owner);
     });
 
-    this.socket.on('player-turn-is', (roomCode: string) => {
-      let currentTurnName = this.getTurn(roomCode);
-      if (currentTurnName === undefined) {
-        console.log('Current turn not found! Setting owner as next player!');
-        this.setInitialTurn(roomCode);
-        currentTurnName = this.getTurn(roomCode);
-      }
-      this.io.to(roomCode).emit('player-turn-is', currentTurnName);
-    });
-
     this.socket.on('update-turn', (roomCode: string) => {
       this.updateTurn(roomCode);
     });
 
     this.socket.on('lobby-update', (roomCode) => {
-      this.sendPlayerList(roomCode);
+      sendPlayerList(this.io, roomCode);
     });
 
     this.socket.on('disconnect', () => {
@@ -162,26 +152,6 @@ class SocketConnection {
     }
   }
 
-  setInitialTurn(roomCode: string) {
-    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    const currentOwner = currentRoom?.players.find(
-      (player) => player.socketID === currentRoom.ownerId
-    );
-    if (currentOwner) currentOwner.currentTurn = true;
-  }
-
-  getTurn(roomCode: string) {
-    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    if(currentRoom){
-      const currentTurn = currentRoom.players.filter(
-        (player) => player.currentTurn === true
-      );
-      if(currentTurn.length > 0){
-        return currentTurn[0].nickname;
-      } return undefined;
-    }
-  }
-
   updateTurn(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
     let currentTurnIndex = currentRoom?.players.findIndex(
@@ -262,7 +232,7 @@ class SocketConnection {
         }),
       });
 
-      this.sendPlayerList(npd.roomCode);
+      sendPlayerList(this.io, npd.roomCode);
       this.io.to(npd.roomCode).emit('room-owner-is', this.getOwner(npd.roomCode));
     }
   }
@@ -286,7 +256,7 @@ class SocketConnection {
           if (p.currentTurn == true && players.length > 0) {
             if(room[1].currentGame !== null){
               this.updateTurn(targetRoom); 
-              const currentTurnName = this.getTurn(targetRoom);
+              const currentTurnName = getTurn(targetRoom);
               handleMoving(this.io, targetRoom, '/SelectNextGame');              
               this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
@@ -304,7 +274,7 @@ class SocketConnection {
       currentTurn: false,
     });
 
-    this.sendPlayerList(targetRoom);
+    sendPlayerList(this.io, targetRoom);
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
       console.log('Room empty! Deleting from room list...');
@@ -358,16 +328,6 @@ class SocketConnection {
       }
     });
   }
-
-  sendPlayerList(roomCode: string) {
-    const currentRoom = this.rooms.get(roomCode);
-    if (currentRoom) {
-      const players = currentRoom.players.sort((a, b) =>
-        b.beers - a.beers === 0 ? a.playerID - b.playerID : b.beers - a.beers
-      );
-      this.io.to(roomCode).emit('lobby-update', JSON.stringify(players));
-    }
-  }
 }
 
 function realtime(io: Server) {
@@ -389,12 +349,26 @@ export const URL = (input: string) => {
   return output;
 }
 
+export const getTurn = (roomCode: string) => {
+  const currentRoom = Store.getInstance().rooms.get(roomCode);
+  if(currentRoom){
+    const currentTurn = currentRoom.players.filter(
+      (player) => player.currentTurn === true
+    );
+    if(currentTurn.length > 0){
+      return currentTurn[0].nickname;
+    } return undefined;
+  }
+}
+
 export const handleMoving = (io: Server, roomCode: string, destination: string | number) => {
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
   if (destination === '/SelectNextGame') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
-  } else if (destination === '/Lobby') {
+  } else if(destination === '/WhoDrank'){
+    runtimeStorage.startGameOnRoom(roomCode, 'Who Drank', io);
+  }else if (destination === '/Lobby') {
     console.log(
       `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
     );
@@ -404,4 +378,15 @@ export const handleMoving = (io: Server, roomCode: string, destination: string |
     currentRoom!.currentPage = destination;
   }
   io.to(roomCode).emit('room-is-moving-to', destination);
+}
+
+export const sendPlayerList = (io: Server, roomCode: string) => {
+  const runtimeStorage = Store.getInstance();
+  const currentRoom = runtimeStorage.rooms.get(roomCode);
+  if (currentRoom) {
+    const players = currentRoom.players.sort((a, b) =>
+      b.beers - a.beers === 0 ? a.playerID - b.playerID : b.beers - a.beers
+    );
+    io.to(roomCode).emit('lobby-update', JSON.stringify(players));
+  }
 }

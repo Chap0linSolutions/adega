@@ -1,16 +1,22 @@
 import { Server } from 'socket.io';
 import Game from '../game';
-import { URL, handleMoving } from '../../index'
+import { URL, handleMoving, getTurn, sendPlayerList } from '../../index'
 
 class Roulette extends Game {
   playerGameData: any;
   gameName = 'SelectNextGame';
   gameType = 'SelectNextGame';
+  hasSelectedNextGame: boolean;
 
   constructor(io: Server, room: string) {
     super(io, room);
-    console.log('Tela de Roleta!');
+    this.log('Tela de Roleta!');
     this.playerGameData = null;
+    this.hasSelectedNextGame = false;
+  }
+
+  log(message: string){
+    console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
   handleNextGameSelection() {
@@ -18,47 +24,105 @@ class Roulette extends Game {
     if (!room) return;
 
     if (!room.options.gamesList.find((game) => game.counter === 0)) {
-      //checkToLower
-      console.log('Todos os jogos possíveis com contador > 0.');
-      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
+      this.log('Todos os jogos possíveis com contador > 0.');
+      room.options.gamesList.forEach((game) => (game.counter -= 1));
     }
 
     const gamesList = room.options.gamesList;
     const drawableOptions = gamesList
-      .filter((game) => game.name !== room.lastGameName) //remove o último jogo que saiu
-      .filter((game) => game.counter < 4); //filtra os jogos que já saíram 4x
-    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
-    const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
+      .filter((game) => game.name !== room.lastGameName) 
+      .filter((game) => game.counter < 4); 
+    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); 
+    const gameDraw = drawableOptions[gameDrawIndex];
     room.lastGameName = gameDraw.name;
 
     const selectedGame = gamesList.findIndex((g) => g === gameDraw);
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(this.roomCode).emit('roulette-number-is', selectedGame);
-    console.log(`Sala ${this.roomCode} - Próximo jogo: ${gameDraw.name}.`);
+    this.log(`Próximo jogo: ${gameDraw.name}.`);
+    setTimeout(() => {                    //quero uma solução melhor que essa mas não consegui encontrar
+      this.hasSelectedNextGame = true;
+    }, 3000);
+    
+  }
+
+  setInitialTurn = (roomCode: string) => {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    const currentOwner = currentRoom?.players.find(
+      (player) => player.socketID === currentRoom.ownerId
+    );
+    if (currentOwner) currentOwner.currentTurn = true;
   }
 
   handleDisconnect(id: string): void {
-    console.log(`Player ${id} disconnected`);
+    this.log(`Player ${id} disconnected`);
   }
-  handleMessage(id: any, value: any, payload: any): void {
-    if (value === 'roulette-number-is') {
-      return this.handleNextGameSelection();
-    } else if(value === 'start-game') {
-        console.log(
-          `Sala ${this.roomCode} - solicitado o início do jogo ${payload}.`
-        );
-        this.runtimeStorage.startGameOnRoom(
-          this.roomCode,
-          payload,
-          this.io
-        );
-        const gameAsURL = URL(payload);
-        return handleMoving(this.io, this.roomCode, gameAsURL);
+
+  checkWhoseTurnIsThis(){
+    let currentTurnName = getTurn(this.roomCode);
+    if (currentTurnName === undefined) {
+      this.log('Current turn not found! Setting owner as next player!');
+      this.setInitialTurn(this.roomCode);
+      currentTurnName = getTurn(this.roomCode);
     }
-    console.log(
-      `Sala ${this.roomCode} - Mensagem recebida: id: ${id}\tvalue: ${value}\tpayload: ${payload}`
+    this.io.to(this.roomCode).emit('player-turn-is', currentTurnName);
+  }
+
+  startGame(payload: any){
+    this.log(
+      `Sala ${this.roomCode} - solicitado o início do jogo ${payload}.`
     );
+    this.runtimeStorage.startGameOnRoom(
+      this.roomCode,
+      payload,
+      this.io
+    );
+    const gameAsURL = URL(payload);
+    return handleMoving(this.io, this.roomCode, gameAsURL);
+  }
+
+  handleMessage(id: any, value: any, payload: any): void {
+    if (value === 'player-turn-is') {
+        return this.checkWhoseTurnIsThis();
+    } if(this.hasSelectedNextGame && value === 'start-game') {
+      return this.startGame(payload);
+    } if (value === 'roulette-number-is') {
+      return this.handleNextGameSelection();
+    }
   }
 }
 
 export { Roulette };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //was in line 71 (below this.io.to(this.roomCode).emit('player-turn-is', currentTurnName);)
+
+        // const room = this.runtimeStorage.rooms.get(this.roomCode);
+        // if(room?.needToSendUpdatedList){
+        //   this.log(`Sala ${this.roomCode} - Alguns participantes saíram durante o jogo passado. Enviando lista atualizada.`);
+        //   this.log(`Lista atualizada:`)
+        //   console.log(room.players.map(p => p.nickname));
+        //   sendPlayerList(this.io, this.roomCode);
+        //   room.needToSendUpdatedList = false;
+        // }
