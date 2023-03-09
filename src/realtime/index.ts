@@ -142,7 +142,7 @@ class SocketConnection {
       const owner = currentRoom.players
         .filter(p => p.socketID === currentRoom.ownerId);
 
-      if(owner){
+      if(owner.length){
         console.log(`Sala ${roomCode} - o Owner atual é ${owner[0].nickname}.`);
         return owner[0].nickname;
       }
