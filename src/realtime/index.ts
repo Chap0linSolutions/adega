@@ -237,13 +237,24 @@ class SocketConnection {
       sendPlayerList(this.io, npd.roomCode);
       this.io.to(npd.roomCode).emit('room-owner-is', this.getOwner(npd.roomCode));
       
-      if(returningPlayer && currentRoom.currentGame?.gameName === 'Who Drank'){
-        const canGetBack = currentRoom.currentGame.playerGameData
-          .find((p:player) => p.nickname === npd.nickname);
-        if(canGetBack){
-          console.log(`Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`);
-          return this.socket.emit('room-is-moving-to', '/WhoDrank');
-        } console.log(`Sala ${npd.roomCode} - O jogador deve aguardar a próxima rodada.`);
+      if(returningPlayer){
+        const ongoingGame = currentRoom.currentGame;
+        if(ongoingGame){
+          if(ongoingGame.gameName === 'Who Drank'){
+            const canGetBack = ongoingGame.playerGameData
+              .find((p:player) => p.nickname === npd.nickname);
+            if(canGetBack){
+              console.log(`Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`);
+              return this.socket.emit('room-is-moving-to', '/WhoDrank');
+            } 
+          } else if(ongoingGame.gameName === 'O Escolhido'){
+            const wasVoting = ongoingGame.playerGameData
+              .find((p:player) => p.nickname === npd.nickname);
+            if(wasVoting){
+              this.socket.emit('cant-go-back-to', ongoingGame.gameName);
+            } 
+          }
+        }
       }
     }
   }

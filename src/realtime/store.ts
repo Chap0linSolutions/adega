@@ -74,6 +74,7 @@ class Store {
     const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {
       currentRoom.currentGame = newGame;
+      currentRoom.currentPage = null;
       return;
     }
     console.log(
