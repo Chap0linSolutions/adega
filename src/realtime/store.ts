@@ -24,6 +24,7 @@ export interface RoomContent {
   players: player[];
   disconnectedPlayers: player[];
   currentGame: Game | null;
+  currentPage: number | null;
   lastGameName: string | null;
   options: OptionsType;
   ownerId: string | null;
@@ -77,6 +78,7 @@ class Store {
     const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {
       currentRoom.currentGame = newGame;
+      currentRoom.currentPage = null;
       return;
     }
     console.log(
@@ -89,6 +91,7 @@ class Store {
       players: [],
       disconnectedPlayers: [],
       currentGame: null,
+      currentPage: null,
       lastGameName: null,
       options: {
         gamesList: defaultGameList,
