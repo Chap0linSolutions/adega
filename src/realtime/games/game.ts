@@ -5,7 +5,6 @@ abstract class Game {
   runtimeStorage: Store;
   io: Server;
   roomCode: string;
-  numberOfPlayers: number;
   abstract gameType: string;
   abstract gameName: string;
   abstract playerGameData: any;
@@ -14,7 +13,6 @@ abstract class Game {
     this.runtimeStorage = Store.getInstance();
     this.io = io;
     this.roomCode = room;
-    this.numberOfPlayers = 0;
   }
 
   abstract handleMessage(id: any, value: any, payload: any): void;

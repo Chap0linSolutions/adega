@@ -108,7 +108,6 @@ class SocketConnection {
     const currentRoom = this.rooms.get(roomCode);
     const currentGame = currentRoom?.currentGame;
     const gameName = currentGame?.gameName;
-    console.log(`gameName: ${gameName}`);
     if (typeof gameName === 'string') {
       const currentState = {
         URL: URL(gameName),
@@ -168,12 +167,11 @@ class SocketConnection {
       currentTurnIndex = 0;
     }
     if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
-    console.log('Next player is:');
-    console.log(
+    console.log(`Sala ${roomCode} - Próximo(a) jogador(a): ${
       this.runtimeStorage.rooms
-        .get(roomCode)
-        ?.players.find((player) => player.currentTurn === true)?.nickname
-    );
+      .get(roomCode)
+      ?.players.find((player) => player.currentTurn === true)?.nickname
+    }`);
   }
 
   addPlayer(newPlayerData: string) {
@@ -190,7 +188,7 @@ class SocketConnection {
     );
     if (index > -1) {
       console.log(
-        `Sala ${npd.roomCode} - ${npd.nickname} está voltando à partida.`
+        `Sala ${npd.roomCode} - ${npd.nickname} está voltando à sala.`
       );
       returningPlayer = true;
       const whosReturning = currentRoom!.disconnectedPlayers.splice(index, 1);
@@ -247,13 +245,13 @@ class SocketConnection {
               console.log(`Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`);
               return this.socket.emit('room-is-moving-to', '/WhoDrank');
             } 
-          } else if(ongoingGame.gameName === 'O Escolhido'){
-            const wasVoting = ongoingGame.playerGameData
+          } else if(ongoingGame.gameName === 'O Escolhido' || ongoingGame.gameName === 'Bang Bang'){
+            const wasPlaying = ongoingGame.playerGameData
               .find((p:player) => p.nickname === npd.nickname);
-            if(wasVoting){
+            if(wasPlaying){
               this.socket.emit('cant-go-back-to', ongoingGame.gameName);
             } 
-          }
+          } 
         }
       }
     }
@@ -273,7 +271,7 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`o jogador ${p.nickname} saiu.\n`);
+          console.log(`Sala ${room[0]} - o jogador ${p.nickname} saiu.\n`);
 
           if (p.currentTurn == true && players.length > 0) {
             if(room[1].currentGame !== null){
