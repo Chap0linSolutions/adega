@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import { handleMoving } from '../../index';
-import { player } from '../../store';
 import Game from '../game';
 
 type SimpleCardPlayer = {
@@ -41,19 +40,6 @@ class SimpleCardGame extends Game {
   }
 
   handleMessage(id: any, value: any, payload: any): void {
-    // if(value === 'can-I-come-in'){
-    //   const {nickname, avatarSeed} = JSON.parse(payload);
-    //   const playerCanCome = this.playerGameData?.find(p => p.nickname === nickname && p.avatarSeed === avatarSeed);
-    //   if(playerCanCome){
-    //     this.log(`O jogador ${nickname} pode entrar.`);
-    //     this.io.to(id).emit('you-can-come', JSON.stringify({
-    //       URL: '/WhoDrank',
-    //       state: undefined,
-    //     }));
-    //   } else {
-    //     this.log(`O jogador ${nickname} deve esperar a rodada acabar no Lobby.`);
-    //   } return;
-    // }
     if(value === 'end-game'){
       if(this.gameName === 'Who Drank'){
         return handleMoving(this.io, this.roomCode, '/SelectNextGame');
