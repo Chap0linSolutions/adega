@@ -1,9 +1,10 @@
-import { Server } from 'socket.io';
 import { OptionsType, defaultGameList } from './games/GameOptions';
+import { Server } from 'socket.io';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
+import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
 
@@ -62,6 +63,9 @@ class Store {
         break;
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
+        break;
+      case 'Quem Sou Eu':
+        newGame = new QuemSouEu(io, roomCode);
         break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
