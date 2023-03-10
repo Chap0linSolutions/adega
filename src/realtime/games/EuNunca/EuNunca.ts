@@ -83,12 +83,11 @@ class EuNunca extends Game {
     console.log(`Player ${id} disconnected`);
   }
   handleMessage(id: any, value: any, payload: any): void {
-    if(value === 'end-game'){
+    if (value === 'end-game') {
       handleMoving(this.io, this.roomCode, '/WhoDrank');
     }
     console.log('Message received');
     console.log(`id: ${id}\tvalue: ${value}\tpayload: ${payload}`);
-
   }
 }
 

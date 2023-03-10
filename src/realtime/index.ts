@@ -111,8 +111,8 @@ class SocketConnection {
     if (typeof gameName === 'string') {
       const currentState = {
         URL: URL(gameName),
-        page: currentRoom?.currentPage
-      }
+        page: currentRoom?.currentPage,
+      };
       this.socket.emit('current-state-is', JSON.stringify(currentState));
     }
   }
@@ -138,17 +138,20 @@ class SocketConnection {
 
   getOwner(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    if(currentRoom){
-      const owner = currentRoom.players
-        .filter(p => p.socketID === currentRoom.ownerId);
+    if (currentRoom) {
+      const owner = currentRoom.players.filter(
+        (p) => p.socketID === currentRoom.ownerId
+      );
 
-      if(owner.length){
+      if (owner.length) {
         currentRoom.currentGame &&
-        console.log(`Sala ${roomCode} - Owner da sala alterado para ${owner[0].nickname}.`);
+          console.log(
+            `Sala ${roomCode} - Owner da sala alterado para ${owner[0].nickname}.`
+          );
         return owner[0].nickname;
       }
       console.log(`Sala ${roomCode} - não há owners aqui.`);
-        return 'no one';
+      return 'no one';
     }
   }
 
@@ -168,11 +171,13 @@ class SocketConnection {
       currentTurnIndex = 0;
     }
     if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
-    console.log(`Sala ${roomCode} - Próximo(a) jogador(a): ${
-      this.runtimeStorage.rooms
-      .get(roomCode)
-      ?.players.find((player) => player.currentTurn === true)?.nickname
-    }`);
+    console.log(
+      `Sala ${roomCode} - Próximo(a) jogador(a): ${
+        this.runtimeStorage.rooms
+          .get(roomCode)
+          ?.players.find((player) => player.currentTurn === true)?.nickname
+      }`
+    );
   }
 
   addPlayer(newPlayerData: string) {
@@ -234,25 +239,34 @@ class SocketConnection {
       });
 
       sendPlayerList(this.io, npd.roomCode);
-      this.io.to(npd.roomCode).emit('room-owner-is', this.getOwner(npd.roomCode));
-      
-      if(returningPlayer){
+      this.io
+        .to(npd.roomCode)
+        .emit('room-owner-is', this.getOwner(npd.roomCode));
+
+      if (returningPlayer) {
         const ongoingGame = currentRoom.currentGame;
-        if(ongoingGame){
-          if(ongoingGame.gameName === 'Who Drank'){
-            const canGetBack = ongoingGame.playerGameData
-              .find((p:player) => p.nickname === npd.nickname);
-            if(canGetBack){
-              console.log(`Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`);
+        if (ongoingGame) {
+          if (ongoingGame.gameName === 'Who Drank') {
+            const canGetBack = ongoingGame.playerGameData.find(
+              (p: player) => p.nickname === npd.nickname
+            );
+            if (canGetBack) {
+              console.log(
+                `Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`
+              );
               return this.socket.emit('room-is-moving-to', '/WhoDrank');
-            } 
-          } else if(ongoingGame.gameName === 'O Escolhido' || ongoingGame.gameName === 'Bang Bang'){
-            const wasPlaying = ongoingGame.playerGameData
-              .find((p:player) => p.nickname === npd.nickname);
-            if(wasPlaying){
+            }
+          } else if (
+            ongoingGame.gameName === 'O Escolhido' ||
+            ongoingGame.gameName === 'Bang Bang'
+          ) {
+            const wasPlaying = ongoingGame.playerGameData.find(
+              (p: player) => p.nickname === npd.nickname
+            );
+            if (wasPlaying) {
               this.socket.emit('cant-go-back-to', ongoingGame.gameName);
-            } 
-          } 
+            }
+          }
         }
       }
     }
@@ -275,10 +289,10 @@ class SocketConnection {
           console.log(`Sala ${room[0]} - ${p.nickname} desconectou-se.`);
 
           if (p.currentTurn == true && players.length > 0) {
-            if(room[1].currentGame !== null){
-              this.updateTurn(targetRoom); 
+            if (room[1].currentGame !== null) {
+              this.updateTurn(targetRoom);
               const currentTurnName = getTurn(targetRoom);
-              handleMoving(this.io, targetRoom, '/SelectNextGame');              
+              handleMoving(this.io, targetRoom, '/SelectNextGame');
               this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
               //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
             }
@@ -336,16 +350,22 @@ class SocketConnection {
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
     const room = this.rooms.get(roomCode)!;
-    playersWhoDrank.forEach((player: player) => { 
-      const targetPlayerIsConnected = room.players.find((p) => p.nickname === player.nickname)
+    playersWhoDrank.forEach((player: player) => {
+      const targetPlayerIsConnected = room.players.find(
+        (p) => p.nickname === player.nickname
+      );
       try {
-        if(targetPlayerIsConnected){
+        if (targetPlayerIsConnected) {
           room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
         } else {
-          room.disconnectedPlayers.find((p) => p.nickname === player.nickname)!.beers += 1;
+          room.disconnectedPlayers.find(
+            (p) => p.nickname === player.nickname
+          )!.beers += 1;
         }
-      } catch (e){
-        console.log(`Sala ${roomCode} - o jogador ${player.nickname} não está conectado nem disconectado (wtf, really)`);
+      } catch (e) {
+        console.log(
+          `Sala ${roomCode} - o jogador ${player.nickname} não está conectado nem disconectado (wtf, really)`
+        );
       }
     });
   }
@@ -368,38 +388,43 @@ export const URL = (input: string) => {
     .replace(/á/g, 'a')
     .replace(/é/g, 'e');
   return output;
-}
+};
 
 export const getTurn = (roomCode: string) => {
   const currentRoom = Store.getInstance().rooms.get(roomCode);
-  if(currentRoom){
+  if (currentRoom) {
     const currentTurn = currentRoom.players.filter(
       (player) => player.currentTurn === true
     );
-    if(currentTurn.length > 0){
+    if (currentTurn.length > 0) {
       return currentTurn[0].nickname;
-    } return undefined;
+    }
+    return undefined;
   }
-}
+};
 
-export const handleMoving = (io: Server, roomCode: string, destination: string | number) => {
+export const handleMoving = (
+  io: Server,
+  roomCode: string,
+  destination: string | number
+) => {
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
   if (destination === '/SelectNextGame') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
-  } else if(destination === '/WhoDrank'){
+  } else if (destination === '/WhoDrank') {
     runtimeStorage.startGameOnRoom(roomCode, 'Who Drank', io);
-  }else if (destination === '/Lobby') {
+  } else if (destination === '/Lobby') {
     console.log(
       `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
     );
     currentRoom!.currentGame = null;
     currentRoom!.currentPage = null;
-  } else if(typeof destination === 'number'){
+  } else if (typeof destination === 'number') {
     currentRoom!.currentPage = destination;
   }
   io.to(roomCode).emit('room-is-moving-to', destination);
-}
+};
 
 export const sendPlayerList = (io: Server, roomCode: string) => {
   const runtimeStorage = Store.getInstance();
@@ -410,4 +435,4 @@ export const sendPlayerList = (io: Server, roomCode: string) => {
     );
     io.to(roomCode).emit('lobby-update', JSON.stringify(players));
   }
-}
+};

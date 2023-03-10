@@ -3,9 +3,9 @@ import { handleMoving } from '../../index';
 import Game from '../game';
 
 type SimpleCardPlayer = {
-  nickname: string,
-  avatarSeed: string,
-}
+  nickname: string;
+  avatarSeed: string;
+};
 class SimpleCardGame extends Game {
   playerGameData: SimpleCardPlayer[] | null;
   gameType = 'simple';
@@ -18,19 +18,19 @@ class SimpleCardGame extends Game {
     this.begin();
   }
 
-  log(message: string){
+  log(message: string) {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
-  begin(){
+  begin() {
     console.log(`${this.gameName}!`);
-    if(this.gameName === 'Who Drank'){
+    if (this.gameName === 'Who Drank') {
       const room = this.runtimeStorage.rooms.get(this.roomCode);
-      this.playerGameData = room!.players.map(p => {
+      this.playerGameData = room!.players.map((p) => {
         return {
           nickname: p.nickname,
           avatarSeed: p.avatarSeed,
-        }
+        };
       });
     }
   }
@@ -40,8 +40,8 @@ class SimpleCardGame extends Game {
   }
 
   handleMessage(id: any, value: any, payload: any): void {
-    if(value === 'end-game'){
-      if(this.gameName === 'Who Drank'){
+    if (value === 'end-game') {
+      if (this.gameName === 'Who Drank') {
         return handleMoving(this.io, this.roomCode, '/SelectNextGame');
       }
       return handleMoving(this.io, this.roomCode, '/WhoDrank');

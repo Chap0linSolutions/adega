@@ -24,38 +24,35 @@ class QuemSouEu extends Game {
     this.log(`Aguardando os jogadores selecionarem uma categoria.`);
   }
 
-
-  log(message: string){
+  log(message: string) {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
-
-  updateNames(){
+  updateNames() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-      room && room.players.forEach(player => {
+    room &&
+      room.players.forEach((player) => {
         this.pickNameFor(player.nickname);
       });
-      this.io
+    this.io
       .to(this.roomCode)
       .emit('players-and-names-are', JSON.stringify(this.playerGameData));
 
-      this.log('Lista de jogadores e papeis:');
-      console.log(this.playerGameData);
+    this.log('Lista de jogadores e papeis:');
+    console.log(this.playerGameData);
   }
 
-
-  finish(winners: string[]){
-  
+  finish(winners: string[]) {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    const losers = room?.players
-    .filter(player => !winners.includes(player.nickname));
-    losers && losers.forEach(loser => loser.beers += 1);
+    const losers = room?.players.filter(
+      (player) => !winners.includes(player.nickname)
+    );
+    losers && losers.forEach((loser) => (loser.beers += 1));
 
     this.log(`Jogo encerrado.`);
     this.log(`Quem ganhou: ${winners}`);
-    this.log(`Quem bebeu:${losers?.map(loser => ` ${loser.nickname}`)}`);
+    this.log(`Quem bebeu:${losers?.map((loser) => ` ${loser.nickname}`)}`);
   }
-
 
   private setCategory(name: string) {
     this.category = name;
@@ -91,16 +88,19 @@ class QuemSouEu extends Game {
     }
   }
 
-
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'game-category-is') {
-      this.setCategory(payload) && this.updateNames(); 
+      this.setCategory(payload) && this.updateNames();
       return;
     }
 
-    if (value ==='update-me') {
-      const whoAsked = this.runtimeStorage.rooms.get(this.roomCode)?.players.find(p => p.socketID === id);
-      this.log(`O jogador ${whoAsked?.nickname} chegou no meio do jogo e pediu para ser atualizado.`)
+    if (value === 'update-me') {
+      const whoAsked = this.runtimeStorage.rooms
+        .get(this.roomCode)
+        ?.players.find((p) => p.socketID === id);
+      this.log(
+        `O jogador ${whoAsked?.nickname} chegou no meio do jogo e pediu para ser atualizado.`
+      );
       this.io.to(id).emit('game-category-is', this.category);
       this.updateNames();
     }
@@ -115,7 +115,9 @@ class QuemSouEu extends Game {
 
   handleDisconnect(id: string): void {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    const whoLeft = room?.disconnectedPlayers.find(p => p.socketID === id)?.nickname;
+    const whoLeft = room?.disconnectedPlayers.find(
+      (p) => p.socketID === id
+    )?.nickname;
     this.log(`${whoLeft} saiu do jogo.`);
   }
 }
