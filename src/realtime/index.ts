@@ -143,7 +143,8 @@ class SocketConnection {
         .filter(p => p.socketID === currentRoom.ownerId);
 
       if(owner.length){
-        console.log(`Sala ${roomCode} - o Owner atual é ${owner[0].nickname}.`);
+        currentRoom.currentGame &&
+        console.log(`Sala ${roomCode} - Owner da sala alterado para ${owner[0].nickname}.`);
         return owner[0].nickname;
       }
       console.log(`Sala ${roomCode} - não há owners aqui.`);
@@ -271,7 +272,7 @@ class SocketConnection {
         if (p?.socketID === this.socket.id) {
           index = players.indexOf(p);
           targetRoom = p.roomCode;
-          console.log(`Sala ${room[0]} - o jogador ${p.nickname} saiu.\n`);
+          console.log(`Sala ${room[0]} - ${p.nickname} desconectou-se.`);
 
           if (p.currentTurn == true && players.length > 0) {
             if(room[1].currentGame !== null){

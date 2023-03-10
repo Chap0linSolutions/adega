@@ -69,8 +69,7 @@ class Roulette extends Game {
   }
 
   startGame(payload: any){
-    this.log(
-      `Sala ${this.roomCode} - solicitado o início do jogo ${payload}.`
+    this.log(`Solicitado o início do jogo ${payload}.`
     );
     this.runtimeStorage.startGameOnRoom(
       this.roomCode,
