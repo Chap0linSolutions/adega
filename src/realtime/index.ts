@@ -14,7 +14,7 @@ class SocketConnection {
     this.runtimeStorage = Store.getInstance();
     this.rooms = this.runtimeStorage.rooms;
 
-    console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}\n`);
+    console.log(`Conexão socket estabelecida - ID do cliente ${socket.id}`);
     this.socket.emit('connection', 'OK');
 
     this.socket.on('join-room', (roomCode, callback) => {
@@ -146,7 +146,7 @@ class SocketConnection {
       if (owner.length) {
         currentRoom.currentGame &&
           console.log(
-            `Sala ${roomCode} - Owner da sala alterado para ${owner[0].nickname}.`
+            `Sala ${roomCode} - Owner da sala: ${owner[0].nickname}.`
           );
         return owner[0].nickname;
       }

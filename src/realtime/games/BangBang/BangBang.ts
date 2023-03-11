@@ -96,7 +96,7 @@ class BangBang extends Game {
       this.playerGameData.sort((a, b) => b.shotTime - a.shotTime);
       if (!this.checkForGameConclusion()) {
         const partialRanking = this.playerGameData.filter(
-          (p) => p.shotTime >= -10000 && p.shotTime !== 0
+          (p) => p.shotTime > -20000 && p.shotTime !== 0
         );
         this.io.to(this.roomCode).emit('message', {
           message: 'bangbang_result',

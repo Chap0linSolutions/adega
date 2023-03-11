@@ -103,7 +103,7 @@ class OEscolhido extends Game {
     });
 
     this.log(
-      `${this.playerGameData.length} jogadores se encontram neste jogo.\n`
+      `${this.playerGameData.length} jogadores se encontram neste jogo.`
     );
   }
 
