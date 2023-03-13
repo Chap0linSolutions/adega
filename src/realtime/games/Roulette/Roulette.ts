@@ -40,10 +40,7 @@ class Roulette extends Game {
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(this.roomCode).emit('roulette-number-is', selectedGame);
     this.log(`Próximo jogo: ${gameDraw.name}.`);
-    setTimeout(() => {
-      //quero uma solução melhor que essa mas não consegui encontrar
-      this.hasSelectedNextGame = true;
-    }, 3000);
+    this.hasSelectedNextGame = true;
   }
 
   setInitialTurn = (roomCode: string) => {
