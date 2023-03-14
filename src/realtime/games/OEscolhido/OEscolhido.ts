@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import Game from '../game';
 import { player } from '../../store';
+import { handleMoving } from '../../index';
 
 type votingSession = {
   nickname: string;
@@ -10,18 +11,10 @@ type votingSession = {
   canVote: boolean;
 };
 
-type mostVoted = {
-  nickname: string;
-  avatarSeed: string;
-  votes: number;
-};
-
 class OEscolhido extends Game {
   gameName = 'O Escolhido';
   gameType = 'round';
-  playerGameData: player[];
-  session: votingSession[];
-  mostVotedPlayers: mostVoted[];
+  playerGameData: votingSession[];
   noPlayer: player = {
     //quem cair durante o jogo vai votar no noPlayer
     playerID: -1,
@@ -36,27 +29,29 @@ class OEscolhido extends Game {
 
   constructor(io: Server, room: string) {
     super(io, room);
-    this.playerGameData = this.runtimeStorage.rooms.get(room)
-      ?.players as player[];
-    this.session = [];
-    this.mostVotedPlayers = [];
+    this.playerGameData = [];
     this.roomCode = room;
 
-    this.beginVoting();
+    // this.beginVoting();
   }
 
-  //id: socketID
-  //value: a tag da mensagem
-  //payload: o corpo da mensagem em si
+  log(message: string) {
+    console.log(`Sala ${this.roomCode} - ${message}`);
+  }
+
   handleMessage(id: any, value: any, payload: any): void {
+    if (value === 'move-to') {
+      this.beginVoting();
+      handleMoving(this.io, this.roomCode, payload);
+    }
     if (value === 'voted-player') {
       this.handleVote(id, payload.player);
       return;
     }
     if (value === 'vote-results') {
       if (this.playerGameData) {
-        console.log(
-          `Sala ${this.roomCode} - O tempo da partida acabou. Contabilizando votos existentes...`
+        this.log(
+          `O tempo da partida acabou. Contabilizando votos existentes...`
         );
         this.finishVoting();
       }
@@ -64,13 +59,12 @@ class OEscolhido extends Game {
   }
 
   handleVote(socketID: string, votedPlayer: string) {
-    //contabilização dos votos
     const vote = JSON.parse(votedPlayer);
-    const whoVoted = this.playerGameData.find(
-      (player) => player.socketID === socketID
-    );
+    const whoVoted = this.runtimeStorage.rooms
+      .get(this.roomCode)!
+      .players.find((player) => player.socketID === socketID);
 
-    this.session?.forEach((player) => {
+    this.playerGameData?.forEach((player) => {
       if (
         player.nickname === whoVoted?.nickname &&
         player.avatarSeed === whoVoted?.avatarSeed
@@ -82,24 +76,24 @@ class OEscolhido extends Game {
         player.avatarSeed === vote.avatarSeed
       ) {
         player.votesReceived += 1;
-        console.log(
-          `Sala ${this.roomCode} - ${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
+        this.log(
+          `${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
         );
       }
     });
 
-    this.checkVotingStatus(); //verifica se já pode finalizar a votação - e o faz em caso afirmativo
+    this.checkVotingStatus();
   }
 
   beginVoting() {
-    console.log(
-      `Sala ${this.roomCode} - o jogo 'O Escolhido' foi iniciado. Todos os players desta sala tiveram seus dados de votação zerados.`
+    this.log(
+      `o jogo 'O Escolhido' foi iniciado. Todos os players desta sala tiveram seus dados de votação zerados.`
     );
-    this.session = [];
 
-    const players: votingSession[] = [];
-    this.playerGameData.forEach((player) => {
-      players.push({
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+
+    room?.players.forEach((player) => {
+      this.playerGameData.push({
         nickname: player.nickname,
         avatarSeed: player.avatarSeed,
         hasVotedIn: undefined,
@@ -108,50 +102,39 @@ class OEscolhido extends Game {
       });
     });
 
-    console.log(`${players.length} jogadores se encontram neste jogo.\n`);
-    this.session = players;
+    this.log(
+      `${this.playerGameData.length} jogadores se encontram neste jogo.`
+    );
   }
 
   finishVoting() {
-    let highestVoteCount = 0;
-    const mostVotedPlayers: mostVoted[] = [];
+    const currentRoom = this.runtimeStorage.rooms.get(this.roomCode);
+    const highestVoteCount = this.playerGameData
+      .sort((a, b) => b.votesReceived - a.votesReceived)
+      .at(0)?.votesReceived;
 
-    this.session.forEach((player) => {
-      //encontra maior número de votos
-      if (player.votesReceived > highestVoteCount) {
-        highestVoteCount = player.votesReceived;
+    const mostVoted = this.playerGameData.filter(
+      (p) => p.votesReceived === highestVoteCount
+    );
+
+    const names = mostVoted.map((p) => p.nickname);
+
+    names.forEach((name) => {
+      const i = currentRoom!.players.findIndex((p) => p.nickname === name);
+      if (i !== -1) {
+        currentRoom!.players[i].beers += 1;
+      } else {
+        const j = currentRoom!.disconnectedPlayers.findIndex(
+          (p) => p.nickname === name
+        );
+        currentRoom!.disconnectedPlayers[j].beers += 1;
       }
-    });
-
-    this.session.forEach((player) => {
-      //inclui os mais votados no respectivo vetor
-      if (player.votesReceived === highestVoteCount) {
-        mostVotedPlayers.push({
-          nickname: player.nickname,
-          avatarSeed: player.avatarSeed,
-          votes: player.votesReceived,
-        });
-      }
-    });
-
-    mostVotedPlayers.forEach((mostVotedPlayer) => {
-      this.playerGameData?.forEach((player) => {
-        if (
-          player.nickname === mostVotedPlayer.nickname &&
-          player.avatarSeed === mostVotedPlayer.avatarSeed
-        ) {
-          player.beers += 1;
-        }
-      });
     });
 
     console.log(
       `Sala ${this.roomCode} - Todos os votos da sala foram contabilizados. Enviando resultado para os jogadores.`
     );
-    this.io
-      .to(this.roomCode)
-      .emit('vote-results', JSON.stringify(mostVotedPlayers));
-    this.mostVotedPlayers = [];
+    this.io.to(this.roomCode).emit('vote-results', JSON.stringify(mostVoted));
   }
 
   handleDisconnect(id: string): void {
@@ -163,29 +146,35 @@ class OEscolhido extends Game {
     )?.nickname;
 
     if (disconnectedPlayerName) {
-      const i = this.session.findIndex(
+      const i = this.playerGameData.findIndex(
         (player) => player.nickname === disconnectedPlayerName
       );
-      console.log(
-        'O jogador ' +
-          this.session[i].nickname +
-          'desconectou-se e não pode mais votar.'
-      );
+      if (i > -1) {
+        this.log(
+          `Sala ${this.roomCode} - o jogador ` +
+            this.playerGameData[i].nickname +
+            ' desconectou-se e não pode mais votar.'
+        );
 
-      if (this.session[i].hasVotedIn === undefined) {
-        this.session[i].hasVotedIn = this.noPlayer;
+        if (this.playerGameData[i].hasVotedIn === undefined) {
+          this.playerGameData[i].hasVotedIn = this.noPlayer;
+        }
+
+        this.checkVotingStatus();
+      } else {
+        this.log(
+          `Algo deu errado no tratamento da desconexão do jogador. disconnectedPlayerName: ${disconnectedPlayerName}`
+        );
+        console.log(this.playerGameData);
       }
-
-      this.checkVotingStatus();
     }
   }
 
   checkVotingStatus(): void {
-    //finaliza a votação caso todos os jogadores disponíveis já tiverem votado
-    if (this.session.find((player) => player.hasVotedIn === undefined)) {
+    if (this.playerGameData.find((player) => player.hasVotedIn === undefined)) {
       return;
     } else {
-      this.finishVoting(); //se todos já votaram, prosseguimos com os resultados
+      this.finishVoting();
     }
   }
 }

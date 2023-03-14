@@ -1,9 +1,10 @@
-import { Server } from 'socket.io';
 import { OptionsType, defaultGameList } from './games/GameOptions';
+import { Server } from 'socket.io';
 import { EuNunca } from './games/EuNunca/EuNunca';
 import { SimpleCardGame } from './games/SimpleCardGame/SimpleCardGame';
 import BangBang from './games/BangBang';
 import OEscolhido from './games/OEscolhido';
+import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
 import Titanic from './games/Titanic';
@@ -23,6 +24,7 @@ export interface RoomContent {
   players: player[];
   disconnectedPlayers: player[];
   currentGame: Game | null;
+  currentPage: number | null;
   lastGameName: string | null;
   options: OptionsType;
   ownerId: string | null;
@@ -63,6 +65,9 @@ class Store {
       case 'Bang Bang':
         newGame = new BangBang(io, roomCode);
         break;
+      case 'Quem Sou Eu':
+        newGame = new QuemSouEu(io, roomCode);
+        break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
         break;
@@ -76,6 +81,7 @@ class Store {
     const currentRoom = this.rooms.get(roomCode);
     if (currentRoom) {
       currentRoom.currentGame = newGame;
+      currentRoom.currentPage = null;
       return;
     }
     console.log(
@@ -88,6 +94,7 @@ class Store {
       players: [],
       disconnectedPlayers: [],
       currentGame: null,
+      currentPage: null,
       lastGameName: null,
       options: {
         gamesList: defaultGameList,

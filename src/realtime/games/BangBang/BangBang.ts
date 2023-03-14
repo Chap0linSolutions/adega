@@ -1,17 +1,23 @@
 import { Server } from 'socket.io';
 import Game from '../game';
-import { player } from '../../store';
+import { handleMoving } from '../../index';
+
+enum Times {
+  Disconnected= -20000,
+  InvalidShot = -10000,
+  GameOver = 10000,
+}
 
 type bangbangData = {
   id: string;
   nickname: string;
-  seed: string;
+  avatarSeed: string;
   shotTime: number;
+  ready: boolean;
 };
 
 class BangBang extends Game {
   playerGameData: bangbangData[];
-  numberOfPlayers = 0;
   gameName = 'Bang Bang';
   gameType = 'round';
 
@@ -21,126 +27,163 @@ class BangBang extends Game {
     console.log('Bang Bang!');
   }
 
-  handleMessage(id: any, value: any, payload: any) {
-    if (value === 'player_ready') {
-      this.startGame(id);
-    }
+  log(message: string) {
+    console.log(`Sala ${this.roomCode} - ${message}`);
+  }
 
-    if (value === 'shot') {
-      console.log('Shots fired');
-      this.handleShot(id, payload);
-    }
+  beginShooting() {
+    this.log(`O jogo '${this.gameName}' foi iniciado.`);
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+
+    room?.players.forEach((player) => {
+      this.playerGameData.push({
+        id: player.socketID,
+        nickname: player.nickname,
+        avatarSeed: player.avatarSeed,
+        shotTime: 0,
+        ready: false,
+      });
+    });
+
+    this.log(
+      `${this.playerGameData.length} jogadores se encontram neste jogo.\n`
+    );
   }
 
   // Add players and Start game
-  public startGame(id: any) {
-    const player = this.runtimeStorage.rooms
-      .get(this.roomCode)
-      ?.players.find((p: player) => {
-        return p.socketID === id;
-      });
+  public checkForGameStart(id: any) {
+    try {
+      this.playerGameData.find((p) => p.id === id)!.ready = true;
+    } catch (e) {
+      this.log(
+        `Algo deu errado ao mudar o estado 'ready' do jogador de ID ${id}.`
+      );
+      return this.log(`${e}`);
+    }
 
-    if (!player) return;
-    this.numberOfPlayers += 1;
-
-    // TODO: have playerGameData be a copy of room.players initialised at the constructor
-    this.playerGameData.push({
-      id: player.socketID,
-      nickname: player.nickname,
-      seed: player.avatarSeed,
-      shotTime: 0,
-    });
-
-    const playersOnRoom = this.runtimeStorage.rooms.get(this.roomCode)?.players
-      .length;
-    if (this.numberOfPlayers === playersOnRoom) {
+    if (this.playerGameData.filter((p) => !p.ready).length === 0) {
+      this.log('Todos os jogadores estão prontos.');
       this.io.to(this.roomCode).emit('message', { message: 'start_timer' });
+    }
+  }
+
+  checkForGameConclusion() {
+    const everyoneHasFired =
+      this.playerGameData.filter((p) => p.shotTime === 0).length === 0;
+    if (everyoneHasFired) {
+      this.finish();
+      return true;
+    }
+    return false;
+  }
+
+  handleMessage(id: any, value: any, payload: any) {
+    if (value === 'move-to') {
+      this.beginShooting();
+      return handleMoving(this.io, this.roomCode, payload);
+    }
+
+    if (value === 'player_ready') {
+      return this.checkForGameStart(id);
+    }
+
+    if (value === 'shot') {
+      this.log(
+        `${this.playerGameData.find((p) => p.id === id)?.nickname} atirou!`
+      );
+      return this.handleShot(id, payload);
     }
   }
 
   // Gameplay
   handleShot(id: string, payload: any) {
-    const player = this.playerGameData.find((p: bangbangData) => p.id === id);
-
-    if (player) {
-      player.shotTime = payload.time;
-
-      const playersRanking = this.playerGameData
-        .filter((p) => !!p.shotTime)
-        .sort((a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime);
-
-      this.io.to(this.roomCode).emit('message', {
-        message: 'bangbang_result',
-        ranking: playersRanking,
-      });
-
-      const hasFired = this.playerGameData
-        .map((p: bangbangData) => !!p.shotTime)
-        .reduce((ac: any, at: any) => ac && at);
-
-      console.log(hasFired);
-
-      if (hasFired) {
+    try {
+      this.playerGameData.find((p) => p.id === id)!.shotTime = payload.time;
+      this.playerGameData.sort((a, b) => b.shotTime - a.shotTime);
+      if (!this.checkForGameConclusion()) {
+        const partialRanking = this.playerGameData.filter(
+          (p) => p.shotTime > Times.Disconnected && p.shotTime !== 0
+        );
         this.io.to(this.roomCode).emit('message', {
-          message: 'bangbang_ranking',
-          ranking: playersRanking,
+          message: 'bangbang_result',
+          ranking: partialRanking,
         });
-
-        this.addBeers(playersRanking);
-        this.playerGameData = [];
-        this.numberOfPlayers = 0;
       }
+    } catch (e) {
+      this.log(
+        `Algo deu errado ao computar o tempo de tiro do jogador de ID ${id}.`
+      );
+      return this.log(`${e}`);
     }
   }
 
   handleDisconnect(id: string): void {
     const index = this.playerGameData.findIndex((p) => p.id === id);
-    this.playerGameData.splice(index, 1);
-    if (this.playerGameData.length === 0) return;
-
-    const hasFired = this.playerGameData
-      .map((p: bangbangData) => !!p.shotTime)
-      .reduce((ac: any, at: any) => ac && at);
-
-    console.log(hasFired);
-    if (hasFired) {
-      const playersRanking = this.playerGameData.sort(
-        (a: bangbangData, b: bangbangData) => b.shotTime - a.shotTime
+    if (index > -1) {
+      this.log(
+        `O jogador ${this.playerGameData[index].nickname} desconectou-se e não poderá mais voltar nesta rodada.`
       );
-
-      this.io.to(this.roomCode).emit('message', {
-        message: 'bangbang_ranking',
-        ranking: playersRanking,
-      });
-
-      this.playerGameData = [];
-      this.numberOfPlayers = 0;
+      this.playerGameData[index]!.shotTime = Times.Disconnected;
+      this.checkForGameConclusion();
     } else {
-      this.numberOfPlayers -= 1;
+      this.log(`O jogador de id ${id} não está na partida (wtf?).`);
+      console.log(this.playerGameData);
     }
   }
 
-  addBeers(playersRanking: bangbangData[]) {
-    console.log('Acabou o tempo! Computando perdedor(es)...');
-    let slowestPlayers = [];
-
-    if (playersRanking[this.numberOfPlayers - 1].shotTime > -10000) {
-      slowestPlayers.push(playersRanking[this.numberOfPlayers - 1]);
-    } else {
-      slowestPlayers = playersRanking.filter(
-        (player) => player.shotTime <= -10000
+  finish() {
+    this.log('Fim de jogo!');
+    try {
+      const whoShotOnTime = this.playerGameData.filter(
+        (p) => p.shotTime > Times.InvalidShot
       );
-    }
+      const whoDidnt = this.playerGameData.filter((p) => p.shotTime === Times.InvalidShot);
 
-    slowestPlayers.forEach((slowestPlayer) => {
-      this.runtimeStorage?.rooms
-        .get(this.roomCode)
-        ?.players.forEach((player) => {
-          if (player.nickname === slowestPlayer.nickname) {
-            player.beers += 1;
-          }
-        });
-    });
+      const firstToShoot = whoShotOnTime[0];
+      const lastToShoot =
+        whoShotOnTime.length > 1 ? whoShotOnTime.at(-1) : undefined;
+
+      if (firstToShoot) {
+        this.log(`${firstToShoot.nickname} é o vencedor.`);
+      }
+
+      if (lastToShoot) {
+        this.log(`${lastToShoot.nickname} bebe (último a atirar).`);
+        this.addBeer(lastToShoot);
+      }
+      whoDidnt.forEach((p) => {
+        this.log(
+          `${p.nickname} bebe (queimou a largada / não atirou a tempo).`
+        );
+        this.addBeer(p);
+      });
+
+      this.log('Enviando resultados aos jogadores.');
+      console.log('');
+      this.io.to(this.roomCode).emit('message', {
+        message: 'bangbang_ranking',
+        ranking: this.playerGameData.filter((p) => p.shotTime > Times.Disconnected),
+      });
+    } catch (e) {
+      this.log(`Algo deu errado ao computar os perdedores.`);
+      return this.log(`${e}`);
+    }
+  }
+
+  addBeer(whoDrinks: bangbangData) {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if (room) {
+      const index = room.players.findIndex(
+        (p) => p.nickname === whoDrinks.nickname
+      );
+      if (index > -1) {
+        room.players[index]!.beers += 1;
+      } else {
+        room.disconnectedPlayers.find(
+          (p) => p.nickname === whoDrinks.nickname
+        )!.beers += 1;
+      }
+    }
   }
 }
 
