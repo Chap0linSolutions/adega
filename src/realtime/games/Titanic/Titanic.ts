@@ -1,3 +1,4 @@
+import { handleMoving } from '../../index';
 import { Server } from 'socket.io';
 import Game from '../game';
 
@@ -11,13 +12,13 @@ type titanicSession = {
 class Titanic extends Game {
   gameName = 'Titanic';
   gameType = 'round';
-  playerGameData: titanicSession[] = [];
+  playerGameData: titanicSession[];
 
   constructor(io: Server, room: string) {
     super(io, room);
     this.roomCode = room;
     this.log('Titanic!');
-    this.beginGame();
+    this.playerGameData = [];
   }
 
   log(message: string) {
@@ -42,6 +43,11 @@ class Titanic extends Game {
   }
 
   handleMessage(id: any, value: any, payload: any): void {
+    if (value === 'move-to') {
+      this.beginGame();
+      handleMoving(this.io, this.roomCode, payload);
+    }
+
     const playerName = this.runtimeStorage.rooms
       .get(this.roomCode)!
       .players.filter((p) => p.socketID === id)
@@ -99,7 +105,7 @@ class Titanic extends Game {
 
       this.playerGameData.find(
         (p) => p.shipPlacement === undefined
-      )!.shipPlacement = [-200, -200, -200, -200, -200]; //this signalizes that the iceberg player was the only one left
+      )!.shipPlacement = [-200, -200, -200, -200, -200]; 
       this.finishGame();
     }
   }
@@ -194,24 +200,23 @@ class Titanic extends Game {
   }
 
   handleDisconnect(id: string): void {
-    const whoLeft = this.runtimeStorage.rooms
+    if(this.playerGameData.length > 0){
+      const whoLeft = this.runtimeStorage.rooms
       .get(this.roomCode)!
       .disconnectedPlayers.filter((p) => p.socketID === id);
 
-    this.log(
-      `O jogador ${whoLeft[0].nickname} desconectou-se e não poderá mais participar desta rodada.`
-    );
-    const whoLeftIndex = this.playerGameData.findIndex(
-      (p) => p.nickname === whoLeft[0].nickname
-    );
-    if (this.playerGameData[whoLeftIndex].shipPlacement === undefined) {
-      this.playerGameData[whoLeftIndex].shipPlacement = [-1]; //-1 signalizes that the player has disconnected before participating
-    }
-    this.checkForGameConclusion();
+      this.log(
+        `O jogador ${whoLeft[0].nickname} desconectou-se e não poderá mais participar desta rodada.`
+      );
+      const whoLeftIndex = this.playerGameData.findIndex(
+        (p) => p.nickname === whoLeft[0].nickname
+      );
+      if (this.playerGameData[whoLeftIndex].shipPlacement === undefined) {
+        this.playerGameData[whoLeftIndex].shipPlacement = [-1];
+      }
+      this.checkForGameConclusion();
+    } 
   }
 }
 
 export { Titanic };
-
-// this.log(`Registro de hits:`);
-// console.log(this.playerGameData.map(player => {return {name: player.nickname, hits: player.hits}}));
