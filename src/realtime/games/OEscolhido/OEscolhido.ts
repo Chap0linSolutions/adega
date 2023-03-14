@@ -35,7 +35,7 @@ class OEscolhido extends Game {
     // this.beginVoting();
   }
 
-  log(message: string){
+  log(message: string) {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
@@ -50,7 +50,9 @@ class OEscolhido extends Game {
     }
     if (value === 'vote-results') {
       if (this.playerGameData) {
-        this.log(`O tempo da partida acabou. Contabilizando votos existentes...`);
+        this.log(
+          `O tempo da partida acabou. Contabilizando votos existentes...`
+        );
         this.finishVoting();
       }
     }
@@ -58,9 +60,9 @@ class OEscolhido extends Game {
 
   handleVote(socketID: string, votedPlayer: string) {
     const vote = JSON.parse(votedPlayer);
-    const whoVoted = this.runtimeStorage.rooms.get(this.roomCode)!.players.find(
-      (player) => player.socketID === socketID
-    );
+    const whoVoted = this.runtimeStorage.rooms
+      .get(this.roomCode)!
+      .players.find((player) => player.socketID === socketID);
 
     this.playerGameData?.forEach((player) => {
       if (
@@ -74,7 +76,9 @@ class OEscolhido extends Game {
         player.avatarSeed === vote.avatarSeed
       ) {
         player.votesReceived += 1;
-        this.log(`${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`);
+        this.log(
+          `${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
+        );
       }
     });
 
@@ -82,7 +86,9 @@ class OEscolhido extends Game {
   }
 
   beginVoting() {
-    this.log(`o jogo 'O Escolhido' foi iniciado. Todos os players desta sala tiveram seus dados de votação zerados.`);
+    this.log(
+      `o jogo 'O Escolhido' foi iniciado. Todos os players desta sala tiveram seus dados de votação zerados.`
+    );
 
     const room = this.runtimeStorage.rooms.get(this.roomCode);
 
@@ -96,7 +102,9 @@ class OEscolhido extends Game {
       });
     });
 
-    this.log(`${this.playerGameData.length} jogadores se encontram neste jogo.\n`);
+    this.log(
+      `${this.playerGameData.length} jogadores se encontram neste jogo.`
+    );
   }
 
   finishVoting() {
@@ -105,17 +113,20 @@ class OEscolhido extends Game {
       .sort((a, b) => b.votesReceived - a.votesReceived)
       .at(0)?.votesReceived;
 
-    const mostVoted = this.playerGameData
-      .filter(p => p.votesReceived === highestVoteCount)
-    
-    const names = mostVoted.map(p => p.nickname);
+    const mostVoted = this.playerGameData.filter(
+      (p) => p.votesReceived === highestVoteCount
+    );
 
-    names.forEach(name => {
-      const i = currentRoom!.players.findIndex(p => p.nickname === name); 
-      if(i !== -1){
-        currentRoom!.players[i].beers += 1; 
+    const names = mostVoted.map((p) => p.nickname);
+
+    names.forEach((name) => {
+      const i = currentRoom!.players.findIndex((p) => p.nickname === name);
+      if (i !== -1) {
+        currentRoom!.players[i].beers += 1;
       } else {
-        const j = currentRoom!.disconnectedPlayers.findIndex(p => p.nickname === name);
+        const j = currentRoom!.disconnectedPlayers.findIndex(
+          (p) => p.nickname === name
+        );
         currentRoom!.disconnectedPlayers[j].beers += 1;
       }
     });
@@ -123,9 +134,7 @@ class OEscolhido extends Game {
     console.log(
       `Sala ${this.roomCode} - Todos os votos da sala foram contabilizados. Enviando resultado para os jogadores.`
     );
-    this.io
-      .to(this.roomCode)
-      .emit('vote-results', JSON.stringify(mostVoted));
+    this.io.to(this.roomCode).emit('vote-results', JSON.stringify(mostVoted));
   }
 
   handleDisconnect(id: string): void {
@@ -140,7 +149,7 @@ class OEscolhido extends Game {
       const i = this.playerGameData.findIndex(
         (player) => player.nickname === disconnectedPlayerName
       );
-      if(i > -1){
+      if (i > -1) {
         this.log(
           `Sala ${this.roomCode} - o jogador ` +
             this.playerGameData[i].nickname +
@@ -153,7 +162,9 @@ class OEscolhido extends Game {
 
         this.checkVotingStatus();
       } else {
-        this.log(`Algo deu errado no tratamento da desconexão do jogador. disconnectedPlayerName: ${disconnectedPlayerName}`);
+        this.log(
+          `Algo deu errado no tratamento da desconexão do jogador. disconnectedPlayerName: ${disconnectedPlayerName}`
+        );
         console.log(this.playerGameData);
       }
     }

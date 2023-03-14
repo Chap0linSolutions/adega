@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import Game from '../game';
-import { player } from '../../store';
 import { categorias } from './names';
 
 type whoPlayer = {
@@ -9,53 +8,79 @@ type whoPlayer = {
 };
 
 class QuemSouEu extends Game {
-  gameName: string;
-  gameType: string;
-  playerGameData: player[];
-  playersWithNames: whoPlayer[];
+  gameName = 'Quem Sou Eu';
+  gameType = 'round';
+  category: string | undefined;
+  playerGameData: whoPlayer[];
   names: string[] | undefined;
 
   constructor(io: Server, room: string) {
     super(io, room);
-    this.playerGameData = this.runtimeStorage.rooms.get(room)
-      ?.players as player[];
-    this.playersWithNames = [];
+    this.playerGameData = [];
     this.names = undefined;
     this.roomCode = room;
-    this.gameName = 'Quem Sou Eu';
-    this.gameType = 'round';
+    this.category = undefined;
+    this.log(`${this.gameName}!`);
+    this.log(`Aguardando os jogadores selecionarem uma categoria.`);
+  }
 
-    console.log(
-      `Sala ${this.roomCode} - o jogo 'Quem Sou Eu' foi iniciado. Aguardando os jogadores selecionarem a categoria.`
+  log(message: string) {
+    console.log(`Sala ${this.roomCode} - ${message}`);
+  }
+
+  updateNames() {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    room &&
+      room.players.forEach((player) => {
+        this.pickNameFor(player.nickname);
+      });
+    this.io
+      .to(this.roomCode)
+      .emit('players-and-names-are', JSON.stringify(this.playerGameData));
+
+    this.log('Lista de jogadores e papeis:');
+    console.log(this.playerGameData);
+  }
+
+  finish(winners: string[]) {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    const losers = room?.players.filter(
+      (player) => !winners.includes(player.nickname)
     );
+    losers && losers.forEach((loser) => (loser.beers += 1));
+
+    this.log(`Jogo encerrado.`);
+    this.log(`Quem ganhou: ${winners}`);
+    this.log(`Quem bebeu:${losers?.map((loser) => ` ${loser.nickname}`)}`);
   }
 
   private setCategory(name: string) {
+    this.category = name;
     this.names = categorias.get(name);
     if (this.names) {
-      console.log(`Sala ${this.roomCode} - Categoria "${name}" definida.`);
-      return;
+      this.log(`Categoria "${name}" definida.`);
+      this.io.to(this.roomCode).emit('game-category-is', name);
+      return true;
     }
-    console.log(
-      `Sala ${this.roomCode} - Erro! A categoria "${name}" não existe.`
-    );
+    this.log(`Erro! A categoria "${name}" não existe.`);
+    return false;
   }
 
   private pickNameFor(player: string) {
     if (this.names) {
-      if (this.playersWithNames.map((p) => p.player).includes(player)) {
-        console.log(
+      if (this.playerGameData.map((p) => p.player).includes(player)) {
+        this.log(
           `Sala ${this.roomCode} - O jogador "${player}" já possui um nome.`
         );
         return;
       }
 
-      const namesInUse = this.playersWithNames.map((p) => p.whoPlayerIs);
+      const namesInUse = this.playerGameData.map((p) => p.whoPlayerIs);
       const availableNames = this.names.filter(
         (name) => !namesInUse.includes(name)
       );
 
-      this.playersWithNames.push({
+      this.playerGameData.push({
         player: player,
         whoPlayerIs:
           availableNames[Math.floor(availableNames.length * Math.random())],
@@ -63,43 +88,37 @@ class QuemSouEu extends Game {
     }
   }
 
-  private updatePlayersAndNames() {
-    console.log(`Sala ${this.roomCode} - Jogadores e nomes:`);
-    console.log(this.playersWithNames);
-    this.io
-      .to(this.roomCode)
-      .emit('players-and-names-are', JSON.stringify(this.playersWithNames));
-  }
-
   handleMessage(id: any, value: any, payload: any): void {
-    if (value === 'send-names') {
-      const playersWithNoNames: string[] = JSON.parse(payload);
-      console.log(
-        `Sala ${this.roomCode} - Os seguintes jogadores não têm nome ainda:`
-      );
-      console.log(playersWithNoNames);
-
-      playersWithNoNames.forEach((player) => this.pickNameFor(player));
-      this.updatePlayersAndNames();
+    if (value === 'game-category-is') {
+      this.setCategory(payload) && this.updateNames();
       return;
     }
 
-    if (value === 'game-category-is') {
-      this.setCategory(payload);
-      this.io.to(this.roomCode).emit('game-category-is', payload);
-      return;
+    if (value === 'update-me') {
+      const whoAsked = this.runtimeStorage.rooms
+        .get(this.roomCode)
+        ?.players.find((p) => p.socketID === id);
+      this.log(
+        `O jogador ${whoAsked?.nickname} chegou no meio do jogo e pediu para ser atualizado.`
+      );
+      this.io.to(id).emit('game-category-is', this.category);
+      this.updateNames();
     }
 
     if (value === 'winners-are') {
-      console.log(`Sala ${this.roomCode} - Os vencedores foram definidos:`);
-      console.log(JSON.parse(payload));
+      const winners = JSON.parse(payload);
+      this.finish(winners);
       this.io.to(this.roomCode).emit('winners-are', payload);
       return;
     }
   }
 
   handleDisconnect(id: string): void {
-    console.log(`User ${id} has disconnected`);
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    const whoLeft = room?.disconnectedPlayers.find(
+      (p) => p.socketID === id
+    )?.nickname;
+    this.log(`${whoLeft} saiu do jogo.`);
   }
 }
 
