@@ -15,7 +15,7 @@ const Status = {
   IcebergTimesUp: [-100, -100, -100, -100, -100],
   IcebergLeftAlone: [-200, -200, -200, -200, -200],
   Disconnected: [-1],
-}
+};
 
 class Titanic extends Game {
   gameName = 'Titanic';
@@ -106,7 +106,7 @@ class Titanic extends Game {
 
       this.playerGameData.find(
         (p) => p.shipPlacement === undefined
-      )!.shipPlacement = Status.IcebergLeftAlone; 
+      )!.shipPlacement = Status.IcebergLeftAlone;
       this.finishGame();
     }
   }
@@ -201,10 +201,10 @@ class Titanic extends Game {
   }
 
   handleDisconnect(id: string): void {
-    if(this.playerGameData.length > 0){
+    if (this.playerGameData.length > 0) {
       const whoLeft = this.runtimeStorage.rooms
-      .get(this.roomCode)!
-      .disconnectedPlayers.filter((p) => p.socketID === id);
+        .get(this.roomCode)!
+        .disconnectedPlayers.filter((p) => p.socketID === id);
 
       this.log(
         `O jogador ${whoLeft[0].nickname} desconectou-se e não poderá mais participar desta rodada.`
@@ -216,7 +216,7 @@ class Titanic extends Game {
         this.playerGameData[whoLeftIndex].shipPlacement = Status.Disconnected;
       }
       this.checkForGameConclusion();
-    } 
+    }
   }
 }
 
