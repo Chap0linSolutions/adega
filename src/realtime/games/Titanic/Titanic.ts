@@ -9,6 +9,14 @@ type titanicSession = {
   hits: number;
 };
 
+const Status = {
+  TimesUp: -100,
+  TitanicTimesUp: [-100],
+  IcebergTimesUp: [-100, -100, -100, -100, -100],
+  IcebergLeftAlone: [-200, -200, -200, -200, -200],
+  Disconnected: [-1],
+}
+
 class Titanic extends Game {
   gameName = 'Titanic';
   gameType = 'round';
@@ -55,19 +63,12 @@ class Titanic extends Game {
 
     if (playerName) {
       if (value === 'player-has-selected') {
-        //possible payload values:
-        // [-200, -200, -200, -200, -200] -> iceberg player was the only one left (everybody else disconnected)
-        // [-100, -100, -100, -100, -100] -> iceberg player didn't play on time
-        // [-100] -> titanic player didn't play on time
-        // [-1] -> titanic player disconnected before playing
-        // any [] combination equal or greater than 100 -> titanic or iceberg player played accordingly
-
         const parsedPayload: number[] = JSON.parse(payload);
         const sectors = parsedPayload.map((p) => (p > 0 ? p - 100 : p));
         this.playerGameData.find(
           (p) => p.nickname === playerName
         )!.shipPlacement = sectors;
-        if (parsedPayload[0] !== -100) {
+        if (parsedPayload[0] !== Status.TimesUp) {
           const typeOfShip = parsedPayload.length > 3 ? 'Icebergs' : 'Titanics';
           this.log(
             `O jogador ${playerName} posicionou seus ${typeOfShip} nos setores ${
@@ -97,7 +98,7 @@ class Titanic extends Game {
       this.finishGame();
     } else if (
       this.playerGameData.filter(
-        (p) => p.shipPlacement && p.shipPlacement[0] === -1
+        (p) => p.shipPlacement && p.shipPlacement[0] === Status.Disconnected[0]
       ).length ===
       this.playerGameData.length - 1
     ) {
@@ -105,7 +106,7 @@ class Titanic extends Game {
 
       this.playerGameData.find(
         (p) => p.shipPlacement === undefined
-      )!.shipPlacement = [-200, -200, -200, -200, -200]; 
+      )!.shipPlacement = Status.IcebergLeftAlone; 
       this.finishGame();
     }
   }
@@ -116,7 +117,7 @@ class Titanic extends Game {
       (p) => p.shipPlacement && p.shipPlacement.length > 1
     );
     const whoDidnt = this.playerGameData.filter(
-      (p) => p.shipPlacement && p.shipPlacement[0] === -100
+      (p) => p.shipPlacement && p.shipPlacement[0] === Status.TimesUp
     );
     const icebergPlayer = this.playerGameData.find(
       (p) => p.shipPlacement!.length > 3
@@ -124,7 +125,7 @@ class Titanic extends Game {
 
     let icebergPlayerGotSomeone = false;
     const icebergPlayerWasTheOnlyOneLeft =
-      icebergPlayer.shipPlacement![0] === -200;
+      icebergPlayer.shipPlacement![0] === Status.IcebergLeftAlone[0];
 
     if (icebergPlayer) {
       whoPlayed.forEach((player) => {
@@ -212,7 +213,7 @@ class Titanic extends Game {
         (p) => p.nickname === whoLeft[0].nickname
       );
       if (this.playerGameData[whoLeftIndex].shipPlacement === undefined) {
-        this.playerGameData[whoLeftIndex].shipPlacement = [-1];
+        this.playerGameData[whoLeftIndex].shipPlacement = Status.Disconnected;
       }
       this.checkForGameConclusion();
     } 
