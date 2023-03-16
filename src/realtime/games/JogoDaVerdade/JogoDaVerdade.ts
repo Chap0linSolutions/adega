@@ -151,7 +151,7 @@ class JogoDaVerdade extends Game {
     console.log('Player disconnected');
   }
 
-  handleMessage(socket: any, value: any, payload: any): void {
+  handleMessage(id: any, value: any, payload: any): void {
     if (value === 'get-suggestions') {
       console.log("Veio buscar as sugestões do Jogo da Verdade")
       const savedSuggestions = this.getSuggestions();
