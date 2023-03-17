@@ -46,6 +46,7 @@ class JogoDoDesafio extends Game {
     'Comente a primeira foto de uma pessoa que você segue no Instagram (não vale pessoas famosas).',
     'Ligue para alguém que conhece e comece a pedir desculpas sem dizer o motivo.',
   ];
+  
     constructor(io: Server, room: string) {
     super(io, room);
     console.log('Jogo do Desafio');
@@ -65,7 +66,7 @@ class JogoDoDesafio extends Game {
     console.log('Player disconnected');
   }
 
-  handleMessage(socket: any, value: any, payload: any): void {
+  handleMessage(id: any, value: any, payload: any): void {
     if (value === 'get-suggestions') {
       console.log("Veio buscar as sugestões do Jogo do Desafio")
       const savedSuggestions = this.getSuggestions();

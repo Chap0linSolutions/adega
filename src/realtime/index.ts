@@ -352,7 +352,7 @@ class SocketConnection {
 
   handleGameMessage(room: string, value: any, payload: any) {
     const currentGame = this.rooms.get(room)?.currentGame;
-    currentGame?.handleMessage(this.socket, value, payload);
+    currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
   handleMoving(roomCode: string, destination: string | number) {
