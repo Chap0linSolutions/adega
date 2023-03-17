@@ -31,8 +31,6 @@ class OEscolhido extends Game {
     super(io, room);
     this.playerGameData = [];
     this.roomCode = room;
-
-    // this.beginVoting();
   }
 
   log(message: string) {
@@ -48,12 +46,13 @@ class OEscolhido extends Game {
       this.handleVote(id, payload.player);
       return;
     }
-    if (value === 'vote-results') {
+    if (value === 'times-up') {
       if (this.playerGameData) {
         this.log(
-          `O tempo da partida acabou. Contabilizando votos existentes...`
+          `O tempo do jogador ${payload} acabou.`
         );
-        this.finishVoting();
+        this.playerGameData.find(p => p.nickname === payload)!.hasVotedIn = this.noPlayer;
+        this.checkVotingStatus();
       }
     }
   }
