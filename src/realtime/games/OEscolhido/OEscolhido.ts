@@ -48,10 +48,9 @@ class OEscolhido extends Game {
     }
     if (value === 'times-up') {
       if (this.playerGameData) {
-        this.log(
-          `O tempo do jogador ${payload} acabou.`
-        );
-        this.playerGameData.find(p => p.nickname === payload)!.hasVotedIn = this.noPlayer;
+        this.log(`O tempo do jogador ${payload} acabou.`);
+        this.playerGameData.find((p) => p.nickname === payload)!.hasVotedIn =
+          this.noPlayer;
         this.checkVotingStatus();
       }
     }
