@@ -53,37 +53,20 @@ class Titanic extends Game {
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'move-to') {
       this.beginGame();
-      handleMoving(this.io, this.roomCode, payload);
+      return handleMoving(this.io, this.roomCode, payload);
     }
+    if (value === 'player-has-selected') {
+      const playerName = this.runtimeStorage.rooms
+        .get(this.roomCode)!
+        .players.filter((p) => p.socketID === id)
+        .at(0)?.nickname;
 
-    const playerName = this.runtimeStorage.rooms
-      .get(this.roomCode)!
-      .players.filter((p) => p.socketID === id)
-      .at(0)?.nickname;
-
-    if (playerName) {
-      if (value === 'player-has-selected') {
+      if (playerName) {
         const parsedPayload: number[] = JSON.parse(payload);
         const sectors = parsedPayload.map((p) => (p > 0 ? p - 100 : p));
         this.playerGameData.find(
           (p) => p.nickname === playerName
         )!.shipPlacement = sectors;
-        if (parsedPayload[0] !== Status.TimesUp) {
-          const typeOfShip = parsedPayload.length > 3 ? 'Icebergs' : 'Titanics';
-          this.log(
-            `O jogador ${playerName} posicionou seus ${typeOfShip} nos setores ${
-              this.playerGameData.find((p) => p.nickname === playerName)!
-                .shipPlacement
-            }.`
-          );
-        } else {
-          this.log(
-            `O tempo do jogador ${playerName} esgotou (${
-              this.playerGameData.find((p) => p.nickname === playerName)!
-                .shipPlacement
-            }).`
-          );
-        }
         this.checkForGameConclusion();
       }
     }
