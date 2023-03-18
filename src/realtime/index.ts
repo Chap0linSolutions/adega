@@ -355,7 +355,7 @@ class SocketConnection {
   }
 
   handleMoving(roomCode: string, destination: string | number) {
-    if(destination === '/SelectNextGame'){
+    if (destination === '/SelectNextGame') {
       this.rooms.get(roomCode)!.currentGame = null;
     }
     this.io.to(roomCode).emit('room-is-moving-to', destination);
@@ -364,7 +364,9 @@ class SocketConnection {
   currentPlayerDrink(roomCode: string, qtdBeers: number) {
     const room = this.rooms.get(roomCode)!;
     room.players.find((p) => p.currentTurn)!.beers += qtdBeers;
-    console.log(`Sala ${roomCode} - Jogador da vez bebeu ${qtdBeers} de uma vez!`);
+    console.log(
+      `Sala ${roomCode} - Jogador da vez bebeu ${qtdBeers} de uma vez!`
+    );
   }
 
   handleNextGameSelection(roomCode: string) {
@@ -385,7 +387,7 @@ class SocketConnection {
     const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
     room.lastGameName = gameDraw.name;
 
-    const selectedGame = gamesList.findIndex(g => g === gameDraw);
+    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(roomCode).emit('roulette-number-is', selectedGame);
     console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);

@@ -61,20 +61,20 @@ class JogoDoDesafio extends Game {
 
     return sugs;
   }
-  
+
   handleDisconnect(id: string): void {
     console.log('Player disconnected');
   }
 
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'get-suggestions') {
-      console.log("Veio buscar as sugestões do Jogo do Desafio")
+      console.log('Veio buscar as sugestões do Jogo do Desafio');
       const savedSuggestions = this.getSuggestions();
       this.io.to(this.roomCode).emit('get-suggestions', savedSuggestions);
     }
 
     if (value === 'show-suggestions') {
-      console.log('Revelando sugestões')
+      console.log('Revelando sugestões');
       this.io.to(this.roomCode).emit('show-suggestions');
     }
   }
