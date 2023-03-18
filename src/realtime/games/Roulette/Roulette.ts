@@ -66,7 +66,6 @@ class Roulette extends Game {
   }
 
   startGame(payload: any) {
-    this.log(`Solicitado o início do jogo ${payload}.`);
     this.runtimeStorage.startGameOnRoom(this.roomCode, payload, this.io);
     const gameAsURL = URL(payload);
     return handleMoving(this.io, this.roomCode, gameAsURL);
