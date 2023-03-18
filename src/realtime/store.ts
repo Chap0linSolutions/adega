@@ -74,6 +74,7 @@ class Store {
         break;
       case 'Jogo do Desafio':
         newGame = new JogoDoDesafio(io, roomCode);
+        break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);
         break;
