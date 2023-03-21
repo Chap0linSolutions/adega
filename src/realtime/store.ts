@@ -7,6 +7,7 @@ import OEscolhido from './games/OEscolhido';
 import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
+import QualODesenho from './games/QualODesenho';
 
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
@@ -67,6 +68,9 @@ class Store {
         break;
       case 'Quem Sou Eu':
         newGame = new QuemSouEu(io, roomCode);
+        break;
+      case 'Qual O Desenho':
+        newGame = new QualODesenho(io, roomCode);
         break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);

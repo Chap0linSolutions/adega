@@ -76,7 +76,7 @@ class Roulette extends Game {
     if (value === 'player-turn-is') {
       return this.checkWhoseTurnIsThis();
     }
-    if (this.hasSelectedNextGame && value === 'start-game') {
+    if (/*this.hasSelectedNextGame && */value === 'start-game') { //TODO REMOVER ISSO APÓS ADICIONAR O JOGO NA ROLETA
       return this.startGame(payload);
     }
     if (value === 'roulette-number-is') {
