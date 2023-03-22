@@ -171,9 +171,8 @@ class OEscolhido extends Game {
   checkVotingStatus(): void {
     if (this.playerGameData.find((player) => player.hasVotedIn === undefined)) {
       return;
-    } else {
-      this.finishVoting();
     }
+    this.finishVoting();
   }
 }
 
