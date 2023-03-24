@@ -392,10 +392,25 @@ class SocketConnection {
   updateTurnList(roomCode: string) {
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
     if (currentRoom != undefined) {
-      currentRoom.playerOrder = [];
-      currentRoom.players.forEach((player) => {
-        currentRoom.playerOrder.push(player.nickname);
-      });
+      const currentPlayers = <string[]>[];
+      currentRoom.players.forEach(player => currentPlayers.push(player.nickname));
+
+      if (currentPlayers.length < currentRoom.playerOrder.length) {
+        currentRoom.playerOrder.forEach(player => {
+          if (currentPlayers.indexOf(player) < 0) {
+            const index = currentRoom.playerOrder.indexOf(player);
+            currentRoom.playerOrder.splice(index, 1);
+          }
+        });
+
+      } else if (currentPlayers.length > currentRoom.playerOrder.length) {
+        currentPlayers.forEach(player => {
+          if(currentRoom.playerOrder.indexOf(player) < 0){
+            currentRoom.playerOrder.push(player)
+          }
+        })
+      };
+      
       console.log(`\n\n\nNEW ORDER LIST:\n${currentRoom.playerOrder}\n\n\n\n`);
     }
   }
