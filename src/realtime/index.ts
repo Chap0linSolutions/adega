@@ -1,7 +1,6 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { EuNunca } from './games/EuNunca/EuNunca';
-import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
 class SocketConnection {
   socket: Socket;
@@ -361,7 +360,8 @@ class SocketConnection {
       );
       try {
         if (targetPlayerIsConnected) {
-          room.players.find((p) => p.nickname === player.nickname)!.beers += (qtdBeers)? qtdBeers : 1;
+          room.players.find((p) => p.nickname === player.nickname)!.beers +=
+            qtdBeers ? qtdBeers : 1;
         } else {
           room.disconnectedPlayers.find(
             (p) => p.nickname === player.nickname
