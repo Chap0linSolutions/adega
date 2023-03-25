@@ -64,12 +64,8 @@ class SocketConnection {
     this.socket.on('players-who-drank-are', (value) => {
       const playersWhoDrank = JSON.parse(value.players);
       const roomCode = value.roomCode;
-      this.updateBeers(roomCode, playersWhoDrank);
-    });
-
-    this.socket.on('current-player-drink', (value) => {
-      const roomCode = value.roomCode;
-      this.currentPlayerDrink(roomCode, value.qtdBeers);
+      const beers = value.beers;
+      this.updateBeers(roomCode, playersWhoDrank, beers);
     });
 
     this.socket.on('eu-nunca-suggestions', () => {
@@ -355,7 +351,8 @@ class SocketConnection {
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
-  updateBeers(roomCode: string, playersWhoDrank: player[]) {
+  updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
+    console.log(roomCode, playersWhoDrank, qtdBeers);
     const room = this.rooms.get(roomCode)!;
     playersWhoDrank.forEach((player: player) => {
       const targetPlayerIsConnected = room.players.find(
@@ -363,7 +360,7 @@ class SocketConnection {
       );
       try {
         if (targetPlayerIsConnected) {
-          room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+          room.players.find((p) => p.nickname === player.nickname)!.beers += (qtdBeers)? qtdBeers : 1;
         } else {
           room.disconnectedPlayers.find(
             (p) => p.nickname === player.nickname
@@ -375,12 +372,6 @@ class SocketConnection {
         );
       }
     });
-  }
-
-  currentPlayerDrink(roomCode: string, qtdBeers: number) {
-    const room = this.rooms.get(roomCode)!;
-    room.players.find((p) => p.currentTurn)!.beers += qtdBeers;
-    console.log(`Sala ${roomCode} - Jogador da vez bebeu ${qtdBeers} de uma vez!`);
   }
 }
 
