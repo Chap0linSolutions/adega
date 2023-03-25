@@ -354,54 +354,12 @@ class SocketConnection {
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
-  handleMoving(roomCode: string, destination: string | number) {
-    if (destination === '/SelectNextGame') {
-      this.rooms.get(roomCode)!.currentGame = null;
-    }
-    this.io.to(roomCode).emit('room-is-moving-to', destination);
-  }
-
   currentPlayerDrink(roomCode: string, qtdBeers: number) {
     const room = this.rooms.get(roomCode)!;
     room.players.find((p) => p.currentTurn)!.beers += qtdBeers;
     console.log(
       `Sala ${roomCode} - Jogador da vez bebeu ${qtdBeers} de uma vez!`
     );
-  }
-
-  handleNextGameSelection(roomCode: string) {
-    const room = this.rooms.get(roomCode);
-    if (!room) return;
-
-    if (!room.options.gamesList.find((game) => game.counter === 0)) {
-      //checkToLower
-      console.log('Todos os jogos possíveis com contador > 0.');
-      room.options.gamesList.forEach((game) => (game.counter -= 1)); //lowerAllCounters
-    }
-
-    const gamesList = room.options.gamesList;
-    const drawableOptions = gamesList
-      .filter((game) => game.name !== room.lastGameName) //remove o último jogo que saiu
-      .filter((game) => game.counter < 4); //filtra os jogos que já saíram 4x
-    const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length); //sorteio
-    const gameDraw = drawableOptions[gameDrawIndex]; //pegando jogo sorteado
-    room.lastGameName = gameDraw.name;
-
-    const selectedGame = gamesList.findIndex((g) => g === gameDraw);
-    room.options.gamesList[selectedGame].counter += 1;
-    this.io.to(roomCode).emit('roulette-number-is', selectedGame);
-    console.log(`Sala ${roomCode} - Próximo jogo: ${gameDraw.name}.`);
-  }
-
-  URL(input: string) {
-    const output = input
-      .replace('', '/') //insere a barra
-      .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
-      .replace(/,/g, '')
-      .replace(/-/g, '')
-      .replace(/á/g, 'a')
-      .replace(/é/g, 'e');
-    return output;
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[]) {
