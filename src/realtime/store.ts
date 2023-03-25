@@ -9,6 +9,7 @@ import Game from './games/game';
 import Roulette from './games/Roulette';
 import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
+import Titanic from './games/Titanic';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
@@ -74,6 +75,9 @@ class Store {
         break;
       case 'Jogo da Verdade':
         newGame = new JogoDaVerdade(io, roomCode);
+        break;
+      case 'Titanic':
+        newGame = new Titanic(io, roomCode);
         break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);

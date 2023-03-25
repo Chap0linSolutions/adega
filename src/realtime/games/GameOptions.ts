@@ -9,6 +9,7 @@ export const gameList = [
   'O Escolhido',
   'Pensa Rápido',
   'Vrum',
+  'Titanic',
   'Quem Sou Eu',
   'Jogo da Verdade',
 ];
