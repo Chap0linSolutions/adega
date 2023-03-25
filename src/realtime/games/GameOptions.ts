@@ -9,8 +9,10 @@ export const gameList = [
   'O Escolhido',
   'Pensa Rápido',
   'Vrum',
+  'Titanic',
   'Quem Sou Eu',
   'Jogo do Desafio',
+  'Jogo da Verdade',
 ];
 
 export type GameListOptionType = {
