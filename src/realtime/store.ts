@@ -25,6 +25,7 @@ export interface player {
 
 export interface RoomContent {
   players: player[];
+  playerOrder: string[];
   disconnectedPlayers: player[];
   currentGame: Game | null;
   currentPage: number | null;
@@ -101,6 +102,7 @@ class Store {
   static emptyRoom(): RoomContent {
     return {
       players: [],
+      playerOrder: [],
       disconnectedPlayers: [],
       currentGame: null,
       currentPage: null,
