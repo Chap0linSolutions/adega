@@ -1,6 +1,7 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { EuNunca } from './games/EuNunca/EuNunca';
+
 class SocketConnection {
   socket: Socket;
   io: Server;
@@ -62,7 +63,8 @@ class SocketConnection {
     this.socket.on('players-who-drank-are', (value) => {
       const playersWhoDrank = JSON.parse(value.players);
       const roomCode = value.roomCode;
-      this.updateBeers(roomCode, playersWhoDrank);
+      const beers = value.beers;
+      this.updateBeers(roomCode, playersWhoDrank, beers);
     });
 
     this.socket.on('eu-nunca-suggestions', () => {
@@ -276,7 +278,8 @@ class SocketConnection {
             }
           } else if (
             ongoingGame.gameName === 'O Escolhido' ||
-            ongoingGame.gameName === 'Bang Bang'
+            ongoingGame.gameName === 'Bang Bang' ||
+            ongoingGame.gameName === 'Titanic'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname
@@ -367,7 +370,8 @@ class SocketConnection {
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
-  updateBeers(roomCode: string, playersWhoDrank: player[]) {
+  updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
+    console.log(roomCode, playersWhoDrank, qtdBeers);
     const room = this.rooms.get(roomCode)!;
     playersWhoDrank.forEach((player: player) => {
       const targetPlayerIsConnected = room.players.find(
@@ -375,7 +379,8 @@ class SocketConnection {
       );
       try {
         if (targetPlayerIsConnected) {
-          room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+          room.players.find((p) => p.nickname === player.nickname)!.beers +=
+            qtdBeers ? qtdBeers : 1;
         } else {
           room.disconnectedPlayers.find(
             (p) => p.nickname === player.nickname

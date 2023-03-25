@@ -3,7 +3,7 @@ import Game from '../game';
 import { handleMoving } from '../../index';
 
 enum Times {
-  Disconnected= -20000,
+  Disconnected = -20000,
   InvalidShot = -10000,
   GameOver = 10000,
 }
@@ -137,7 +137,9 @@ class BangBang extends Game {
       const whoShotOnTime = this.playerGameData.filter(
         (p) => p.shotTime > Times.InvalidShot
       );
-      const whoDidnt = this.playerGameData.filter((p) => p.shotTime === Times.InvalidShot);
+      const whoDidnt = this.playerGameData.filter(
+        (p) => p.shotTime === Times.InvalidShot
+      );
 
       const firstToShoot = whoShotOnTime[0];
       const lastToShoot =
@@ -162,7 +164,9 @@ class BangBang extends Game {
       console.log('');
       this.io.to(this.roomCode).emit('message', {
         message: 'bangbang_ranking',
-        ranking: this.playerGameData.filter((p) => p.shotTime > Times.Disconnected),
+        ranking: this.playerGameData.filter(
+          (p) => p.shotTime > Times.Disconnected
+        ),
       });
     } catch (e) {
       this.log(`Algo deu errado ao computar os perdedores.`);
