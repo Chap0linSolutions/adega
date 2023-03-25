@@ -11,6 +11,7 @@ export const gameList = [
   'Vrum',
   'Titanic',
   'Quem Sou Eu',
+  'Jogo do Desafio',
   'Jogo da Verdade',
 ];
 

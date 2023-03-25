@@ -129,7 +129,7 @@ class JogoDaVerdade extends Game {
     'Se considera uma pessoa sensual?',
     'Você tem medo de dar a sua opinião?',
     'Preferiria viver um amor de novela ou um amor simples?',
-    'Com quem você costuma se comparar de vez em quando?'
+    'Com quem você costuma se comparar de vez em quando?',
   ];
 
   constructor(io: Server, room: string) {
@@ -146,20 +146,20 @@ class JogoDaVerdade extends Game {
 
     return sugs;
   }
-  
+
   handleDisconnect(id: string): void {
     console.log('Player disconnected');
   }
 
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'get-suggestions') {
-      console.log("Veio buscar as sugestões do Jogo da Verdade")
+      console.log('Veio buscar as sugestões do Jogo da Verdade');
       const savedSuggestions = this.getSuggestions();
       this.io.to(this.roomCode).emit('get-suggestions', savedSuggestions);
     }
 
     if (value === 'show-suggestions') {
-      console.log('Revelando sugestões')
+      console.log('Revelando sugestões');
       this.io.to(this.roomCode).emit('show-suggestions');
     }
   }
