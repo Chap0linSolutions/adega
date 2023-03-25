@@ -9,7 +9,7 @@ class JogoDoDesafio extends Game {
   static suggestions: string[] = [
     'Troque de roupa com uma pessoa da roda.',
     'Conte o enredo do seu filme ou série preferido com a língua para fora.',
-    'Deixe uma pessoa da roda retocar a sua maquiagem (ser estiver sem, permita que alguém o(a) maquie).',
+    'Deixe uma pessoa da roda retocar a sua maquiagem (se estiver sem, permita que alguém o(a) maquie).',
     'Ligue para um amigo(a) que não está fazendo aniversário para dar os parabéns.',
     'Role a tela da lista de telefone do seu celular até alguém mandar parar. Você terá que decidir se ligará para a pessoa ou excluirá o número.',
     'Imite todos os gestos da pessoa ao seu lado por 5 minutos.',
