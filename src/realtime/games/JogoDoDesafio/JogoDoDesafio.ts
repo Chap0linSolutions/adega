@@ -63,10 +63,10 @@ class JogoDoDesafio extends Game {
   }
 
   handleDisconnect(id: string): void {
-    console.log('Player disconnected');
+    console.log(`${id} - Player disconnected`);
   }
 
-  handleMessage(id: any, value: any, payload: any): void {
+  handleMessage(id: any, value: any): void {
     if (value === 'get-suggestions') {
       console.log('Veio buscar as sugestões do Jogo do Desafio');
       const savedSuggestions = this.getSuggestions();
