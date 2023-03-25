@@ -11,6 +11,7 @@ export const gameList = [
   'Vrum',
   'Titanic',
   'Quem Sou Eu',
+  'Jogo da Verdade',
 ];
 
 export type GameListOptionType = {
