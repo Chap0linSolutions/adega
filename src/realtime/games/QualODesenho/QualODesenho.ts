@@ -82,6 +82,7 @@ class QualODesenho extends Game {
 
         if (value === 'start-game'){
             this.io.to(this.roomCode).emit('start-game');
+            return;
         }
 
         if (value === 'update-me') {
@@ -92,16 +93,22 @@ class QualODesenho extends Game {
                 `O jogador ${whoAsked?.nickname} chegou no meio do jogo e pediu para ser atualizado.`
             );
             this.io.to(id).emit('game-word-is', this.word);
+            return;
         }
 
         if (value === 'correct-guess') {
             this.updateWinners(payload);
+            return;
         }
 
         if (value === 'winners-are') {
             if (this.winners) this.finish(this.winners);
             this.io.to(this.roomCode).emit('winners-are', this.winners);
             return;
+        }
+
+        if(value === 'drawing-points'){
+            this.io.to(this.roomCode).emit('drawing-points', payload);
         }
     }
 
