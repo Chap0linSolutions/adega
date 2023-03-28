@@ -28,9 +28,9 @@ class QualODesenho extends Game {
         console.log(`Sala ${this.roomCode} - ${message}`);
     }
 
-    sendWordOptions() {
+    sendWordOptions(id: any) {
         const suggestions = this.getWordSuggestions();
-        this.io.emit('que-desenho-suggestions', suggestions);
+        this.io.to(id).emit('que-desenho-suggestions', suggestions);
     }
 
     getWordSuggestions(num = 2) {
@@ -70,14 +70,18 @@ class QualODesenho extends Game {
     }
 
     handleMessage(id: any, value: any, payload: any): void {
-        if (value === 'start-game') {
-            this.sendWordOptions();
+        if (value === 'que-desenho-suggestions') {
+            this.sendWordOptions(id);
             return;
         }
 
         if (value === 'game-word-is') {
             this.setWord(payload);
             return;
+        }
+
+        if (value === 'start-game'){
+            this.io.to(this.roomCode).emit('start-game');
         }
 
         if (value === 'update-me') {
