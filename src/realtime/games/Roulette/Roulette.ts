@@ -6,13 +6,11 @@ class Roulette extends Game {
   playerGameData: any;
   gameName = 'SelectNextGame';
   gameType = 'SelectNextGame';
-  hasSelectedNextGame: boolean;
 
   constructor(io: Server, room: string) {
     super(io, room);
     this.log('Tela de Roleta!');
     this.playerGameData = null;
-    this.hasSelectedNextGame = false;
   }
 
   log(message: string) {
@@ -40,7 +38,6 @@ class Roulette extends Game {
     room.options.gamesList[selectedGame].counter += 1;
     this.io.to(this.roomCode).emit('roulette-number-is', selectedGame);
     this.log(`Próximo jogo: ${gameDraw.name}.`);
-    this.hasSelectedNextGame = true;
   }
 
   setInitialTurn = (roomCode: string) => {
@@ -66,7 +63,6 @@ class Roulette extends Game {
   }
 
   startGame(payload: any) {
-    this.log(`Solicitado o início do jogo ${payload}.`);
     this.runtimeStorage.startGameOnRoom(this.roomCode, payload, this.io);
     const gameAsURL = URL(payload);
     return handleMoving(this.io, this.roomCode, gameAsURL);
@@ -76,7 +72,7 @@ class Roulette extends Game {
     if (value === 'player-turn-is') {
       return this.checkWhoseTurnIsThis();
     }
-    if (/*this.hasSelectedNextGame && */value === 'start-game') { //TODO REMOVER ISSO APÓS ADICIONAR O JOGO NA ROLETA
+    if (value === 'start-game') {
       return this.startGame(payload);
     }
     if (value === 'roulette-number-is') {

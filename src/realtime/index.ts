@@ -1,6 +1,7 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
 import { EuNunca } from './games/EuNunca/EuNunca';
+
 class SocketConnection {
   socket: Socket;
   io: Server;
@@ -62,7 +63,8 @@ class SocketConnection {
     this.socket.on('players-who-drank-are', (value) => {
       const playersWhoDrank = JSON.parse(value.players);
       const roomCode = value.roomCode;
-      this.updateBeers(roomCode, playersWhoDrank);
+      const beers = value.beers;
+      this.updateBeers(roomCode, playersWhoDrank, beers);
     });
 
     this.socket.on('eu-nunca-suggestions', () => {
@@ -156,28 +158,45 @@ class SocketConnection {
   }
 
   updateTurn(roomCode: string) {
+    const currentTurnIndex = this.getCurrentTurnIndex(roomCode);
+    const nextPlayer = this.getNextPlayer(roomCode, currentTurnIndex);
+    console.log('Next player is:');
+    console.log(nextPlayer?.nickname);
+  }
+
+  getCurrentTurnIndex(roomCode: string) {
+    let currentTurnIndex = -1;
     const currentRoom = this.runtimeStorage.rooms.get(roomCode);
-    let currentTurnIndex = currentRoom?.players.findIndex(
-      (player) => player.currentTurn === true
-    );
-    if (currentTurnIndex != undefined && currentRoom) {
-      currentRoom.players[currentTurnIndex].currentTurn = false;
-      if (currentTurnIndex < currentRoom.players.length - 1) {
-        currentTurnIndex += 1;
-      } else {
-        currentTurnIndex = 0;
+    if (currentRoom) {
+      const currentPlayerPlaying = currentRoom.players.find(
+        (player) => player.currentTurn === true
+      );
+      if (currentPlayerPlaying) {
+        currentTurnIndex = currentRoom.playerOrder.findIndex(
+          (player) => player === currentPlayerPlaying?.nickname
+        );
       }
-    } else {
-      currentTurnIndex = 0;
     }
-    if (currentRoom) currentRoom.players[currentTurnIndex].currentTurn = true;
-    console.log(
-      `Sala ${roomCode} - Próximo(a) jogador(a): ${
-        this.runtimeStorage.rooms
-          .get(roomCode)
-          ?.players.find((player) => player.currentTurn === true)?.nickname
-      }`
-    );
+    return currentTurnIndex;
+  }
+
+  getNextPlayer(roomCode: string, currentTurnIndex: number) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    let nextTurnIndex = 0;
+    if (currentRoom) {
+      if (currentTurnIndex < currentRoom.playerOrder.length - 1) {
+        nextTurnIndex = currentTurnIndex + 1;
+      }
+      currentRoom.players.forEach((player) => {
+        player.nickname === currentRoom.playerOrder[nextTurnIndex]
+          ? (player.currentTurn = true)
+          : (player.currentTurn = false);
+      });
+
+      return currentRoom.players.find(
+        (player) => player.nickname === currentRoom.playerOrder[nextTurnIndex]
+      );
+    }
   }
 
   addPlayer(newPlayerData: string) {
@@ -229,6 +248,7 @@ class SocketConnection {
           playerID: players.length,
           currentTurn: currentTurn,
         });
+        this.updateTurnList(npd.roomCode);
       }
 
       this.rooms.set(npd.roomCode, {
@@ -258,7 +278,8 @@ class SocketConnection {
             }
           } else if (
             ongoingGame.gameName === 'O Escolhido' ||
-            ongoingGame.gameName === 'Bang Bang'
+            ongoingGame.gameName === 'Bang Bang' ||
+            ongoingGame.gameName === 'Titanic'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname
@@ -309,6 +330,7 @@ class SocketConnection {
       currentTurn: false,
     });
 
+    this.updateTurnList(targetRoom);
     sendPlayerList(this.io, targetRoom);
 
     if (this.rooms.get(targetRoom)?.players.length == 0) {
@@ -348,7 +370,8 @@ class SocketConnection {
     currentGame?.handleMessage(this.socket.id, value, payload);
   }
 
-  updateBeers(roomCode: string, playersWhoDrank: player[]) {
+  updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
+    console.log(roomCode, playersWhoDrank, qtdBeers);
     const room = this.rooms.get(roomCode)!;
     playersWhoDrank.forEach((player: player) => {
       const targetPlayerIsConnected = room.players.find(
@@ -356,7 +379,8 @@ class SocketConnection {
       );
       try {
         if (targetPlayerIsConnected) {
-          room.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+          room.players.find((p) => p.nickname === player.nickname)!.beers +=
+            qtdBeers ? qtdBeers : 1;
         } else {
           room.disconnectedPlayers.find(
             (p) => p.nickname === player.nickname
@@ -368,6 +392,33 @@ class SocketConnection {
         );
       }
     });
+  }
+
+  updateTurnList(roomCode: string) {
+    const currentRoom = this.runtimeStorage.rooms.get(roomCode);
+    if (currentRoom != undefined) {
+      const currentPlayers = <string[]>[];
+      currentRoom.players.forEach((player) =>
+        currentPlayers.push(player.nickname)
+      );
+
+      if (currentPlayers.length < currentRoom.playerOrder.length) {
+        currentRoom.playerOrder.forEach((player) => {
+          if (currentPlayers.indexOf(player) < 0) {
+            const index = currentRoom.playerOrder.indexOf(player);
+            currentRoom.playerOrder.splice(index, 1);
+          }
+        });
+      } else if (currentPlayers.length > currentRoom.playerOrder.length) {
+        currentPlayers.forEach((player) => {
+          if (currentRoom.playerOrder.indexOf(player) < 0) {
+            currentRoom.playerOrder.push(player);
+          }
+        });
+      }
+
+      console.log(`\n\n\nNEW ORDER LIST:\n${currentRoom.playerOrder}\n\n\n\n`);
+    }
   }
 }
 
