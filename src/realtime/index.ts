@@ -83,14 +83,14 @@ class SocketConnection {
 
   sendRoomGames(roomCode: string) {
     const room = this.rooms.get(roomCode);
-    if(!room) return;
+    if (!room) return;
     const roomGames = room.options.gamesList.map((game) => game.name);
     this.io.to(roomCode).emit('games-update', roomGames);
   }
 
   updateRoomGameSelection(roomCode: string, selectedGames: string) {
     const room = this.rooms.get(roomCode);
-    if(!room) return;
+    if (!room) return;
     const selection: string[] = JSON.parse(selectedGames);
     const previousRoomGames = room.options.gamesList;
     const newRoomGames = selection.map((gameName) => {
@@ -207,7 +207,7 @@ class SocketConnection {
 
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
     const currentRoom = this.rooms.get(npd.roomCode);
-    if(!currentRoom) return;
+    if (!currentRoom) return;
 
     index = currentRoom.disconnectedPlayers.findIndex(
       (player) => player.nickname === npd.nickname
@@ -326,9 +326,9 @@ class SocketConnection {
     const disconnectedPlayer = this.rooms
       .get(targetRoom)
       ?.players.splice(index, 1);
-    
-    if(!disconnectedPlayer) return;
-    
+
+    if (!disconnectedPlayer) return;
+
     this.rooms.get(targetRoom)?.disconnectedPlayers.push({
       ...disconnectedPlayer[0],
       currentTurn: false,
@@ -377,7 +377,7 @@ class SocketConnection {
   updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
     console.log(roomCode, playersWhoDrank, qtdBeers);
     const room = this.rooms.get(roomCode);
-    if(!room) return;
+    if (!room) return;
     playersWhoDrank.forEach((player: player) => {
       const targetPlayerIsConnected = room.players.find(
         (p) => p.nickname === player.nickname
@@ -385,10 +385,12 @@ class SocketConnection {
       try {
         if (targetPlayerIsConnected) {
           const pl = room.players.find((p) => p.nickname === player.nickname);
-          if(pl) pl.beers += ((qtdBeers) ? qtdBeers : 1);
+          if (pl) pl.beers += qtdBeers ? qtdBeers : 1;
         } else {
-          const pl = room.disconnectedPlayers.find((p) => p.nickname === player.nickname);
-          if(pl) pl.beers += ((qtdBeers) ? qtdBeers : 1);
+          const pl = room.disconnectedPlayers.find(
+            (p) => p.nickname === player.nickname
+          );
+          if (pl) pl.beers += qtdBeers ? qtdBeers : 1;
         }
       } catch (e) {
         console.log(
@@ -465,7 +467,7 @@ export const handleMoving = (
 ) => {
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
-  if(!currentRoom) return;
+  if (!currentRoom) return;
   if (destination === '/SelectNextGame') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
   } else if (destination === '/WhoDrank') {

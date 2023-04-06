@@ -49,8 +49,8 @@ class OEscolhido extends Game {
     if (value === 'times-up') {
       if (this.playerGameData) {
         this.log(`O tempo do jogador ${payload} acabou.`);
-        const player  = this.playerGameData.find((p) => p.nickname === payload);
-        if(player) player.hasVotedIn = this.noPlayer;
+        const player = this.playerGameData.find((p) => p.nickname === payload);
+        if (player) player.hasVotedIn = this.noPlayer;
         this.checkVotingStatus();
       }
     }
@@ -59,8 +59,10 @@ class OEscolhido extends Game {
   handleVote(socketID: string, votedPlayer: string) {
     const vote = JSON.parse(votedPlayer);
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    if(room){
-      const whoVoted = room.players.find((player) => player.socketID === socketID);
+    if (room) {
+      const whoVoted = room.players.find(
+        (player) => player.socketID === socketID
+      );
       this.playerGameData?.forEach((player) => {
         if (
           player.nickname === whoVoted?.nickname &&
@@ -107,14 +109,14 @@ class OEscolhido extends Game {
 
   finishVoting() {
     const currentRoom = this.runtimeStorage.rooms.get(this.roomCode);
-    if(currentRoom){
+    if (currentRoom) {
       const highestVoteCount = this.playerGameData
         .sort((a, b) => b.votesReceived - a.votesReceived)
         .at(0)?.votesReceived;
 
       const mostVoted = this.playerGameData.filter(
         (p) => p.votesReceived === highestVoteCount
-     );
+      );
 
       const names = mostVoted.map((p) => p.nickname);
 

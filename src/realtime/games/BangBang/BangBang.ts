@@ -53,8 +53,8 @@ class BangBang extends Game {
   // Add players and Start game
   public checkForGameStart(id: any) {
     try {
-      const player = this.playerGameData.find((p) => p.id === id);    //meh, preferia com o '!'
-      if(player) player.ready = true;
+      const player = this.playerGameData.find((p) => p.id === id); //meh, preferia com o '!'
+      if (player) player.ready = true;
     } catch (e) {
       this.log(
         `Algo deu errado ao mudar o estado 'ready' do jogador de ID ${id}.`
@@ -100,7 +100,7 @@ class BangBang extends Game {
   handleShot(id: string, payload: any) {
     try {
       const player = this.playerGameData.find((p) => p.id === id);
-      if(player){
+      if (player) {
         player.shotTime = payload.time;
         this.playerGameData.sort((a, b) => b.shotTime - a.shotTime);
         if (!this.checkForGameConclusion()) {
@@ -113,7 +113,9 @@ class BangBang extends Game {
           });
         }
       } else {
-        this.log(`Erro, jogador de ID ${id} não encontrado. Não foi possível computar o tempo dele.`);
+        this.log(
+          `Erro, jogador de ID ${id} não encontrado. Não foi possível computar o tempo dele.`
+        );
       }
     } catch (e) {
       this.log(
@@ -130,7 +132,7 @@ class BangBang extends Game {
         `O jogador ${this.playerGameData[index].nickname} desconectou-se e não poderá mais voltar nesta rodada.`
       );
       const player = this.playerGameData[index];
-      if(player) player.shotTime = Times.Disconnected;
+      if (player) player.shotTime = Times.Disconnected;
       this.checkForGameConclusion();
     } else {
       this.log(`O jogador de id ${id} não está na partida (wtf?).`);
@@ -189,10 +191,12 @@ class BangBang extends Game {
       );
       if (index > -1) {
         const player = room.players[index];
-        if(player) player.beers += 1;
+        if (player) player.beers += 1;
       } else {
-        const player = room.disconnectedPlayers.find((p) => p.nickname === whoDrinks.nickname)
-        if(player) player.beers += 1;
+        const player = room.disconnectedPlayers.find(
+          (p) => p.nickname === whoDrinks.nickname
+        );
+        if (player) player.beers += 1;
       }
     }
   }
