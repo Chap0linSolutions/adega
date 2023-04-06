@@ -35,8 +35,8 @@ class Titanic extends Game {
 
   beginGame() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-
-    room!.players.forEach((player) =>
+    if(!room) return;
+    room.players.forEach((player) =>
       this.playerGameData.push({
         nickname: player.nickname,
         avatarSeed: player.avatarSeed,
@@ -56,17 +56,19 @@ class Titanic extends Game {
       return handleMoving(this.io, this.roomCode, payload);
     }
     if (value === 'player-has-selected') {
-      const playerName = this.runtimeStorage.rooms
-        .get(this.roomCode)!
-        .players.filter((p) => p.socketID === id)
+      const room = this.runtimeStorage.rooms.get(this.roomCode);
+      if(!room) return;
+      
+      const playerName = room.players
+        .filter((p) => p.socketID === id)
         .at(0)?.nickname;
 
       if (playerName) {
         const parsedPayload: number[] = JSON.parse(payload);
         const sectors = parsedPayload.map((p) => (p > 0 ? p - 100 : p));
-        this.playerGameData.find(
-          (p) => p.nickname === playerName
-        )!.shipPlacement = sectors;
+        const player = this.playerGameData.find((p) => p.nickname === playerName);
+        if(!player) return;
+        player.shipPlacement = sectors;
         this.checkForGameConclusion();
       }
     }
@@ -87,28 +89,30 @@ class Titanic extends Game {
     ) {
       this.log('Só sobrou o jogador da vez.');
 
-      this.playerGameData.find(
-        (p) => p.shipPlacement === undefined
-      )!.shipPlacement = Status.IcebergLeftAlone;
+      const icePlayer = this.playerGameData.find((p) => p.shipPlacement === undefined);
+      if(!icePlayer) return;
+      icePlayer.shipPlacement = Status.IcebergLeftAlone;
       this.finishGame();
     }
   }
 
   finishGame() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if(!room) return;
     const whoPlayed = this.playerGameData.filter(
       (p) => p.shipPlacement && p.shipPlacement.length > 1
     );
     const whoDidnt = this.playerGameData.filter(
       (p) => p.shipPlacement && p.shipPlacement[0] === Status.TimesUp
     );
-    const icebergPlayer = this.playerGameData.find(
-      (p) => p.shipPlacement!.length > 3
-    )!;
-
+    const icebergPlayer = this.playerGameData
+    .find((p) => p.shipPlacement && p.shipPlacement.length > 3);
+    
+    if(!icebergPlayer || !icebergPlayer.shipPlacement) return;
+    
     let icebergPlayerGotSomeone = false;
     const icebergPlayerWasTheOnlyOneLeft =
-      icebergPlayer.shipPlacement![0] === Status.IcebergLeftAlone[0];
+      icebergPlayer.shipPlacement[0] === Status.IcebergLeftAlone[0];
 
     if (icebergPlayer) {
       whoPlayed.forEach((player) => {
@@ -131,11 +135,11 @@ class Titanic extends Game {
       if (player.hits > 0 && player.hits < 5) {
         this.log(`${player.nickname} bebe (foi atingido(a)).`);
         try {
-          room!.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+          const pl = room.players.find((p) => p.nickname === player.nickname);
+          if(pl) pl.beers += 1;
         } catch (e) {
-          room!.disconnectedPlayers.find(
-            (p) => p.nickname === player.nickname
-          )!.beers += 1;
+          const pl = room.disconnectedPlayers.find((p) => p.nickname === player.nickname);
+          if(pl) pl.beers += 1;
         }
       } else if (player.hits === 0) {
         this.log(`${player.nickname} sobreviveu.`);
@@ -146,11 +150,11 @@ class Titanic extends Game {
     whoDidnt.forEach((player) => {
       this.log(`${player.nickname} bebe (não jogou a tempo).`);
       try {
-        room!.players.find((p) => p.nickname === player.nickname)!.beers += 1;
+        const pl = room.players.find((p) => p.nickname === player.nickname);
+        if(pl) pl.beers += 1;
       } catch (e) {
-        room!.disconnectedPlayers.find(
-          (p) => p.nickname === player.nickname
-        )!.beers += 1;
+        const pl = room.disconnectedPlayers.find((p) => p.nickname === player.nickname);
+        if(pl) pl.beers += 1;
       }
     });
 
@@ -162,9 +166,8 @@ class Titanic extends Game {
       this.log(
         `${icebergPlayer.nickname} jogou com seus icebergs, mas é MUITO ruim e não acertou ninguém. Por isso bebe.`
       );
-      room!.players.find(
-        (p) => p.nickname === icebergPlayer.nickname
-      )!.beers += 1;
+      const icePlayer = room.players.find((p) => p.nickname === icebergPlayer.nickname);
+      if(icePlayer) icePlayer.beers += 1;
     }
 
     const finalResults = this.playerGameData.map((player) => {
@@ -185,9 +188,10 @@ class Titanic extends Game {
 
   handleDisconnect(id: string): void {
     if (this.playerGameData.length > 0) {
-      const whoLeft = this.runtimeStorage.rooms
-        .get(this.roomCode)!
-        .disconnectedPlayers.filter((p) => p.socketID === id);
+      const room = this.runtimeStorage.rooms.get(this.roomCode);
+      if(!room) return;
+
+      const whoLeft = room.disconnectedPlayers.filter((p) => p.socketID === id);
 
       this.log(
         `O jogador ${whoLeft[0].nickname} desconectou-se e não poderá mais participar desta rodada.`

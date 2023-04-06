@@ -26,12 +26,14 @@ class SimpleCardGame extends Game {
     console.log(`${this.gameName}!`);
     if (this.gameName === 'Who Drank') {
       const room = this.runtimeStorage.rooms.get(this.roomCode);
-      this.playerGameData = room!.players.map((p) => {
-        return {
-          nickname: p.nickname,
-          avatarSeed: p.avatarSeed,
-        };
-      });
+      if(room){
+        this.playerGameData = room.players.map((p) => {
+          return {
+            nickname: p.nickname,
+            avatarSeed: p.avatarSeed,
+          };
+        });
+      }
     }
   }
 

@@ -49,8 +49,8 @@ class OEscolhido extends Game {
     if (value === 'times-up') {
       if (this.playerGameData) {
         this.log(`O tempo do jogador ${payload} acabou.`);
-        this.playerGameData.find((p) => p.nickname === payload)!.hasVotedIn =
-          this.noPlayer;
+        const player  = this.playerGameData.find((p) => p.nickname === payload);
+        if(player) player.hasVotedIn = this.noPlayer;
         this.checkVotingStatus();
       }
     }
@@ -58,29 +58,29 @@ class OEscolhido extends Game {
 
   handleVote(socketID: string, votedPlayer: string) {
     const vote = JSON.parse(votedPlayer);
-    const whoVoted = this.runtimeStorage.rooms
-      .get(this.roomCode)!
-      .players.find((player) => player.socketID === socketID);
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if(room){
+      const whoVoted = room.players.find((player) => player.socketID === socketID);
+      this.playerGameData?.forEach((player) => {
+        if (
+          player.nickname === whoVoted?.nickname &&
+          player.avatarSeed === whoVoted?.avatarSeed
+        ) {
+          player.hasVotedIn = vote;
+        }
+        if (
+          player.nickname === vote.nickname &&
+          player.avatarSeed === vote.avatarSeed
+        ) {
+          player.votesReceived += 1;
+          this.log(
+            `${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
+          );
+        }
+      });
 
-    this.playerGameData?.forEach((player) => {
-      if (
-        player.nickname === whoVoted?.nickname &&
-        player.avatarSeed === whoVoted?.avatarSeed
-      ) {
-        player.hasVotedIn = vote;
-      }
-      if (
-        player.nickname === vote.nickname &&
-        player.avatarSeed === vote.avatarSeed
-      ) {
-        player.votesReceived += 1;
-        this.log(
-          `${whoVoted?.nickname} votou em ${player.nickname}, que tem agora ${player.votesReceived} votos no total.`
-        );
-      }
-    });
-
-    this.checkVotingStatus();
+      this.checkVotingStatus();
+    }
   }
 
   beginVoting() {
@@ -107,32 +107,34 @@ class OEscolhido extends Game {
 
   finishVoting() {
     const currentRoom = this.runtimeStorage.rooms.get(this.roomCode);
-    const highestVoteCount = this.playerGameData
-      .sort((a, b) => b.votesReceived - a.votesReceived)
-      .at(0)?.votesReceived;
+    if(currentRoom){
+      const highestVoteCount = this.playerGameData
+        .sort((a, b) => b.votesReceived - a.votesReceived)
+        .at(0)?.votesReceived;
 
-    const mostVoted = this.playerGameData.filter(
-      (p) => p.votesReceived === highestVoteCount
-    );
+      const mostVoted = this.playerGameData.filter(
+        (p) => p.votesReceived === highestVoteCount
+     );
 
-    const names = mostVoted.map((p) => p.nickname);
+      const names = mostVoted.map((p) => p.nickname);
 
-    names.forEach((name) => {
-      const i = currentRoom!.players.findIndex((p) => p.nickname === name);
-      if (i !== -1) {
-        currentRoom!.players[i].beers += 1;
-      } else {
-        const j = currentRoom!.disconnectedPlayers.findIndex(
-          (p) => p.nickname === name
-        );
-        currentRoom!.disconnectedPlayers[j].beers += 1;
-      }
-    });
+      names.forEach((name) => {
+        const i = currentRoom.players.findIndex((p) => p.nickname === name);
+        if (i !== -1) {
+          currentRoom.players[i].beers += 1;
+        } else {
+          const j = currentRoom.disconnectedPlayers.findIndex(
+            (p) => p.nickname === name
+          );
+          currentRoom.disconnectedPlayers[j].beers += 1;
+        }
+      });
 
-    console.log(
-      `Sala ${this.roomCode} - Todos os votos da sala foram contabilizados. Enviando resultado para os jogadores.`
-    );
-    this.io.to(this.roomCode).emit('vote-results', JSON.stringify(mostVoted));
+      console.log(
+        `Sala ${this.roomCode} - Todos os votos da sala foram contabilizados. Enviando resultado para os jogadores.`
+      );
+      this.io.to(this.roomCode).emit('vote-results', JSON.stringify(mostVoted));
+    }
   }
 
   handleDisconnect(id: string): void {
