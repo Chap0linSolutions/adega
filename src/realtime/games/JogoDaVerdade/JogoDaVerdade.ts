@@ -134,7 +134,7 @@ class JogoDaVerdade extends Game {
 
   constructor(io: Server, room: string) {
     super(io, room);
-    console.log('Jogo da Verdade');
+    console.log('Jogo da Verdade!');
 
     this.playerGameData = JogoDaVerdade.suggestions;
   }
@@ -152,10 +152,10 @@ class JogoDaVerdade extends Game {
   }
 
   handleMessage(id: any, value: any): void {
-    if (value === 'get-suggestions') {
+    if (value === 'verdade-suggestions') {
       console.log('Veio buscar as sugestões do Jogo da Verdade');
       const savedSuggestions = this.getSuggestions();
-      this.io.to(this.roomCode).emit('get-suggestions', savedSuggestions);
+      this.io.to(this.roomCode).emit('verdade-suggestions', JSON.stringify(savedSuggestions));
     }
 
     if (value === 'show-suggestions') {

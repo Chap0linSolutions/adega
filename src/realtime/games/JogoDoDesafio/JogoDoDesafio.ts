@@ -67,10 +67,10 @@ class JogoDoDesafio extends Game {
   }
 
   handleMessage(id: any, value: any): void {
-    if (value === 'get-suggestions') {
+    if (value === 'desafio-suggestions') {
       console.log('Veio buscar as sugestões do Jogo do Desafio');
       const savedSuggestions = this.getSuggestions();
-      this.io.to(this.roomCode).emit('get-suggestions', savedSuggestions);
+      this.io.to(this.roomCode).emit('desafio-suggestions', JSON.stringify(savedSuggestions));
     }
 
     if (value === 'show-suggestions') {

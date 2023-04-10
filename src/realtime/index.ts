@@ -67,11 +67,6 @@ class SocketConnection {
       this.updateBeers(roomCode, playersWhoDrank, beers);
     });
 
-    this.socket.on('eu-nunca-suggestions', () => {
-      const suggestions = EuNunca.getStandardSuggestions();
-      this.socket.emit('eu-nunca-suggestions', suggestions);
-    });
-
     this.socket.on('message', (value) => {
       this.handleGameMessage(value.room, value.message, value.payload);
     });
