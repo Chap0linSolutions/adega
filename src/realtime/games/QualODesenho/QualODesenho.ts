@@ -28,11 +28,6 @@ class QualODesenho extends Game {
         console.log(`Sala ${this.roomCode} - ${message}`);
     }
 
-    sendWordOptions(id: any) {
-        const suggestions = this.getWordSuggestions();
-        this.io.to(id).emit('que-desenho-suggestions', suggestions);
-    }
-
     getWordSuggestions(num = 2) {
         let suggestionsPool: string[] = [];
         categories.forEach((wordList) => {
@@ -46,8 +41,24 @@ class QualODesenho extends Game {
         return suggestions;
     }
 
+    sendWordOptions(id: any) {
+        const suggestions = this.getWordSuggestions();
+        this.io.to(id).emit('que-desenho-suggestions', suggestions);
+    }
+
+    broadcastGuess(guess: string) {
+        this.io
+        .to(this.roomCode)
+        .emit('new-guess-attempt', guess);
+    }
+
     updateWinners(payload: any) {
-        throw new Error('Method not implemented.');
+        if(!this.winners){
+            this.winners = [];
+        }
+
+        this.winners.push(payload);
+        console.log(this.winners);
     }
 
     finish(winners: string[]) {
@@ -98,6 +109,11 @@ class QualODesenho extends Game {
 
         if (value === 'correct-guess') {
             this.updateWinners(payload);
+            return;
+        }
+
+        if (value === 'wrong-guess') {
+            this.broadcastGuess(payload);
             return;
         }
 
