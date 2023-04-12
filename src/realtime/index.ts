@@ -411,8 +411,6 @@ class SocketConnection {
           }
         });
       }
-
-      console.log(`\n\n\nNEW ORDER LIST:\n${currentRoom.playerOrder}\n\n\n\n`);
     }
   }
 }

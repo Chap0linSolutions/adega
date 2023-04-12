@@ -21,11 +21,12 @@ class Titanic extends Game {
   gameName = 'Titanic';
   gameType = 'round';
   playerGameData: titanicSession[];
+  resultsWereSent = false;
 
   constructor(io: Server, room: string) {
     super(io, room);
     this.roomCode = room;
-    this.log('Titanic!');
+    this.log('\nTitanic!');
     this.playerGameData = [];
   }
 
@@ -43,10 +44,6 @@ class Titanic extends Game {
         shipPlacement: undefined,
         hits: 0,
       })
-    );
-
-    this.log(
-      `O jogo Titanic foi iniciado. Os dados dos jogadores foram zerados.`
     );
   }
 
@@ -67,6 +64,7 @@ class Titanic extends Game {
         this.playerGameData.find(
           (p) => p.nickname === playerName
         )!.shipPlacement = sectors;
+
         this.checkForGameConclusion();
       }
     }
@@ -129,7 +127,7 @@ class Titanic extends Game {
     let survivors = 0;
     whoPlayed.forEach((player) => {
       if (player.hits > 0 && player.hits < 5) {
-        this.log(`${player.nickname} bebe (foi atingido(a)).`);
+        this.log(`${player.nickname} bebe (foi atingido).`);
         try {
           room!.players.find((p) => p.nickname === player.nickname)!.beers += 1;
         } catch (e) {
@@ -160,30 +158,29 @@ class Titanic extends Game {
       survivors > 0
     ) {
       this.log(
-        `${icebergPlayer.nickname} jogou com seus icebergs, mas é MUITO ruim e não acertou ninguém. Por isso bebe.`
+        `${icebergPlayer.nickname} bebe (jogou, mas não acertou ninguém).`
       );
       room!.players.find(
         (p) => p.nickname === icebergPlayer.nickname
       )!.beers += 1;
     }
 
-    const finalResults = this.playerGameData.map((player) => {
-      //wrap up the results
-      return {
-        nickname: player.nickname,
-        avatarSeed: player.avatarSeed,
-        shipPlacement: player.shipPlacement,
-        hits: player.hits,
-      };
-    });
+    const finalResults = this.playerGameData.map((player) => ({
+      nickname: player.nickname,
+      avatarSeed: player.avatarSeed,
+      shipPlacement: player.shipPlacement,
+      hits: player.hits,
+    }));
 
-    this.log(`Enviando resultados aos jogadores.`); //send final results
     this.io
       .to(this.roomCode)
       .emit('titanic-results', JSON.stringify(finalResults));
+    
+    this.resultsWereSent = true;
   }
 
   handleDisconnect(id: string): void {
+    if(this.resultsWereSent) return;
     if (this.playerGameData.length > 0) {
       const whoLeft = this.runtimeStorage.rooms
         .get(this.roomCode)!
