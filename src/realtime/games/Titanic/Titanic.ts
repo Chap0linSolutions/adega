@@ -175,12 +175,12 @@ class Titanic extends Game {
     this.io
       .to(this.roomCode)
       .emit('titanic-results', JSON.stringify(finalResults));
-    
+
     this.resultsWereSent = true;
   }
 
   handleDisconnect(id: string): void {
-    if(this.resultsWereSent) return;
+    if (this.resultsWereSent) return;
     if (this.playerGameData.length > 0) {
       const whoLeft = this.runtimeStorage.rooms
         .get(this.roomCode)!

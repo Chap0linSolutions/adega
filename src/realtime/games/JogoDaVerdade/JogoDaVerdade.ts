@@ -155,7 +155,9 @@ class JogoDaVerdade extends Game {
     if (value === 'verdade-suggestions') {
       console.log('Veio buscar as sugestões do Jogo da Verdade');
       const savedSuggestions = this.getSuggestions();
-      this.io.to(this.roomCode).emit('verdade-suggestions', JSON.stringify(savedSuggestions));
+      this.io
+        .to(this.roomCode)
+        .emit('verdade-suggestions', JSON.stringify(savedSuggestions));
     }
 
     if (value === 'show-suggestions') {

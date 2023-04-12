@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
-import { EuNunca } from './games/EuNunca/EuNunca';
 
 class SocketConnection {
   socket: Socket;
