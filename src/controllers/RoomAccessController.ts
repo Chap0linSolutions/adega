@@ -40,14 +40,11 @@ export default class RoomAccessController {
         .filter((player) => player.avatarSeed === avatarSeed);
 
       if (userWasThere.length > 0) {
-        console.log('O usuário estava na sala e será redirecionado de volta.');
-        return res.status(200).send(true);
+        return res.status(200).send('O usuário estava na sala e será redirecionado de volta.');
       } else {
-        console.log('O usuário não estava na sala.');
-        return res.status(403).send();
+        return res.status(403).send('O usuário não estava na sala.');
       }
     }
-    console.log('A sala não existe mais.');
-    return res.status(410).send();
+    return res.status(410).send('A sala não existe mais.');
   }
 }

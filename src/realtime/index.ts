@@ -76,15 +76,17 @@ class SocketConnection {
   }
 
   sendRoomGames(roomCode: string) {
-    const roomGames = this.rooms
-      .get(roomCode)!
-      .options.gamesList.map((game) => game.name);
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+    const roomGames = room.options.gamesList.map((game) => game.name);
     this.io.to(roomCode).emit('games-update', roomGames);
   }
 
   updateRoomGameSelection(roomCode: string, selectedGames: string) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
     const selection: string[] = JSON.parse(selectedGames);
-    const previousRoomGames = this.rooms.get(roomCode)!.options.gamesList;
+    const previousRoomGames = room.options.gamesList;
     const newRoomGames = selection.map((gameName) => {
       const index = previousRoomGames.findIndex(
         (game) => game.name === gameName
@@ -94,9 +96,7 @@ class SocketConnection {
         counter: index >= 0 ? previousRoomGames[index].counter : 0,
       };
     });
-    this.rooms.get(roomCode)!.options.gamesList = newRoomGames;
-    console.log(`Sala ${roomCode} - Jogos escolhidos: `);
-    console.log((this.rooms.get(roomCode)!.options.gamesList = newRoomGames));
+    room.options.gamesList = newRoomGames;
     this.sendRoomGames(roomCode);
   }
 
@@ -201,8 +201,9 @@ class SocketConnection {
 
     const npd = { ...JSON.parse(newPlayerData), socketID: this.socket.id };
     const currentRoom = this.rooms.get(npd.roomCode);
+    if (!currentRoom) return;
 
-    index = currentRoom!.disconnectedPlayers.findIndex(
+    index = currentRoom.disconnectedPlayers.findIndex(
       (player) => player.nickname === npd.nickname
     );
     if (index > -1) {
@@ -210,7 +211,7 @@ class SocketConnection {
         `Sala ${npd.roomCode} - ${npd.nickname} está voltando à sala.`
       );
       returningPlayer = true;
-      const whosReturning = currentRoom!.disconnectedPlayers.splice(index, 1);
+      const whosReturning = currentRoom.disconnectedPlayers.splice(index, 1);
       beerCount = whosReturning[0].beers;
       index = -1;
     }
@@ -319,8 +320,11 @@ class SocketConnection {
     const disconnectedPlayer = this.rooms
       .get(targetRoom)
       ?.players.splice(index, 1);
+
+    if (!disconnectedPlayer) return;
+
     this.rooms.get(targetRoom)?.disconnectedPlayers.push({
-      ...disconnectedPlayer![0],
+      ...disconnectedPlayer[0],
       currentTurn: false,
     });
 
@@ -366,19 +370,21 @@ class SocketConnection {
 
   updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
     console.log(roomCode, playersWhoDrank, qtdBeers);
-    const room = this.rooms.get(roomCode)!;
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
     playersWhoDrank.forEach((player: player) => {
       const targetPlayerIsConnected = room.players.find(
         (p) => p.nickname === player.nickname
       );
       try {
         if (targetPlayerIsConnected) {
-          room.players.find((p) => p.nickname === player.nickname)!.beers +=
-            qtdBeers ? qtdBeers : 1;
+          const pl = room.players.find((p) => p.nickname === player.nickname);
+          if (pl) pl.beers += qtdBeers ? qtdBeers : 1;
         } else {
-          room.disconnectedPlayers.find(
+          const pl = room.disconnectedPlayers.find(
             (p) => p.nickname === player.nickname
-          )!.beers += 1;
+          );
+          if (pl) pl.beers += qtdBeers ? qtdBeers : 1;
         }
       } catch (e) {
         console.log(
@@ -453,6 +459,7 @@ export const handleMoving = (
 ) => {
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
+  if (!currentRoom) return;
   if (destination === '/SelectNextGame') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
   } else if (destination === '/WhoDrank') {
@@ -461,10 +468,10 @@ export const handleMoving = (
     console.log(
       `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
     );
-    currentRoom!.currentGame = null;
-    currentRoom!.currentPage = null;
+    currentRoom.currentGame = null;
+    currentRoom.currentPage = null;
   } else if (typeof destination === 'number') {
-    currentRoom!.currentPage = destination;
+    currentRoom.currentPage = destination;
   }
   io.to(roomCode).emit('room-is-moving-to', destination);
 };
