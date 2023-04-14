@@ -53,7 +53,7 @@ class BangBang extends Game {
   // Add players and Start game
   public checkForGameStart(id: any) {
     try {
-      const player = this.playerGameData.find((p) => p.id === id); //meh, preferia com o '!'
+      const player = this.playerGameData.find((p) => p.id === id);
       if (player) player.ready = true;
     } catch (e) {
       this.log(
