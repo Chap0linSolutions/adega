@@ -6,9 +6,13 @@ type guessingPlayer = {
   id: string;
   nickname: string;
   avatarSeed: string;
-  guessTime: string;
-  guessedCorrectly: boolean;
+  guessTime: number;
 };
+
+type Winner = {
+  nickname: string;
+  time: number;
+}
 
 class QualODesenho extends Game {
   gameName = 'Qual O Desenho';
@@ -59,8 +63,7 @@ class QualODesenho extends Game {
           id: player.socketID,
           nickname: player.nickname,
           avatarSeed: player.avatarSeed,
-          guessTime: '0',
-          guessedCorrectly: false,
+          guessTime: -1,
         });
       } else {
         this.currentArtist = player.nickname;
@@ -76,67 +79,50 @@ class QualODesenho extends Game {
     this.io.to(this.roomCode).emit('new-guess-attempt', guess);
   }
 
-  updateWinners(payload: string) {
-    const [playerName, guessTime] = payload.split(':');
-
-    this.playerGameData.forEach((guessingPlayer) => {
-      if (guessingPlayer.nickname === playerName) {
-        guessingPlayer.guessedCorrectly =
-          parseInt(guessTime) > 0 ? true : false;
-        guessingPlayer.guessTime = guessTime;
-      }
-    });
-
-    const updatedWinners = this.playerGameData.filter(
-      (player) => player.guessedCorrectly
-    );
-
-    if (updatedWinners) {
-      updatedWinners.sort((a, b) => {
-        return -(parseFloat(a.guessTime) - parseFloat(b.guessTime));
-      });
-      this.io
-        .to(this.roomCode)
-        .emit('updated-winners', JSON.stringify(updatedWinners));
-
-      if (updatedWinners.length === this.playerGameData.length) {
-        if (updatedWinners[updatedWinners.length - 1].guessedCorrectly) {
-          updatedWinners[updatedWinners.length - 1].guessedCorrectly = false;
-        }
-        this.io.to(this.roomCode).emit('end-game');
-        const finalWinners = <string[]>[];
-        updatedWinners.forEach((winner) => {
-          if (winner.guessedCorrectly) finalWinners.push(winner.nickname);
-        });
-        if (finalWinners) finalWinners.push(this.currentArtist);
-        this.finish(finalWinners);
-      }
-    }
+  updateWinners(playerName: string, guessTime: number) {
+    this.log(`${playerName} acertou em ${guessTime}`);
+    const whoWon = this.playerGameData.find(p => p.nickname === playerName);
+    if(!whoWon) return;
+    
+    whoWon.guessTime = guessTime;
+    this.playerGameData.sort((a, b) => (a.guessTime - b.guessTime));
+    const winners = this.playerGameData.filter(p => p.guessTime > -1);
+    if(winners.length === this.playerGameData.length) return this.finishGame();
+    
+    return this.io
+      .to(this.roomCode)
+      .emit('updated-winners', JSON.stringify(winners));
   }
 
-  updateLosers() {
-    this.playerGameData.forEach((player) => {
-      if (!player.guessedCorrectly) {
-        this.updateWinners(`${player.nickname}:-1000`);
-      }
-    });
-  }
-
-  finish(winners: string[]) {
+  finishGame() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    const losers = room?.players.filter(
-      (player) => !winners.includes(player.nickname)
-    );
-    losers && losers.forEach((loser) => (loser.beers += 1));
+    if(!room) return this.log('a sala desse jogo não existe mais (wtf?)');
+    const losers = this.playerGameData.filter(p => p.guessTime === -1);
+    losers && losers.forEach(loser => {
+      try{
+        let player = room.players.find(p => p.nickname === loser.nickname);
+        if(player){
+          player.beers += 1;
+        } else {
+          player = room.disconnectedPlayers.find(p => p.nickname === loser.nickname);
+          player && (player.beers += 1);
+        }
+      } catch (e) {
+        this.log(`Não foi possível encontrar o jogador ${loser.nickname}.`)
+      }
+    })
 
     this.log(`Jogo encerrado.`);
-    this.log(`Quem ganhou: ${winners}`);
-    this.log(`Quem bebeu:${losers?.map((loser) => ` ${loser.nickname}`)}`);
+    this.log(`Quem ganhou: ${this.playerGameData.filter(p => p.guessTime >= 0).map(p => p.nickname)}`);
+    this.log(`Quem bebeu: ${losers?.map((loser) => loser.nickname)}`);
+    this.io
+      .to(this.roomCode)
+      .emit('results', JSON.stringify(this.playerGameData));
   }
 
   private setWord(word: string) {
     this.word = word;
-    this.log(`Palavra "${word}" definida.`);
+    this.log(`Palavra '${word}' definida.`);
     this.io.to(this.roomCode).emit('game-word-is', word);
     return true;
   }
@@ -159,7 +145,8 @@ class QualODesenho extends Game {
     }
 
     if (value === 'correct-guess') {
-      this.updateWinners(payload);
+      const { nickname, time }: Winner = JSON.parse(payload);
+      this.updateWinners(nickname, time);
       return;
     }
 
@@ -168,7 +155,7 @@ class QualODesenho extends Game {
     }
 
     if (value === 'times-up') {
-      this.updateLosers();
+      this.finishGame();
     }
   }
 
