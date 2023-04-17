@@ -68,7 +68,7 @@ class QualODesenho extends Game {
     });
 
     this.log(
-      `${this.playerGameData.length} jogadores se encontram neste jogo.\n`
+      `${this.playerGameData.length + 1} pessoas se encontram neste jogo.\n`
     );
   }
 
@@ -104,7 +104,6 @@ class QualODesenho extends Game {
           updatedWinners[updatedWinners.length - 1].guessedCorrectly = false;
         }
         this.io.to(this.roomCode).emit('end-game');
-        this.io.to(this.roomCode).emit('final-ranking');
         const finalWinners = <string[]>[];
         updatedWinners.forEach((winner) => {
           if (winner.guessedCorrectly) finalWinners.push(winner.nickname);
@@ -115,7 +114,7 @@ class QualODesenho extends Game {
     }
   }
 
-  tidyUpRanking() {
+  updateLosers() {
     this.playerGameData.forEach((player) => {
       if (!player.guessedCorrectly) {
         this.updateWinners(`${player.nickname}:-1000`);
@@ -159,24 +158,8 @@ class QualODesenho extends Game {
       return;
     }
 
-    if (value === 'update-me') {
-      const whoAsked = this.runtimeStorage.rooms
-        .get(this.roomCode)
-        ?.players.find((p) => p.socketID === id);
-      this.log(
-        `O jogador ${whoAsked?.nickname} chegou no meio do jogo e pediu para ser atualizado.`
-      );
-      this.io.to(id).emit('game-word-is', this.word);
-      return;
-    }
-
     if (value === 'correct-guess') {
       this.updateWinners(payload);
-      return;
-    }
-
-    if (value === 'wrong-guess') {
-      this.broadcastGuess(payload);
       return;
     }
 
@@ -185,7 +168,7 @@ class QualODesenho extends Game {
     }
 
     if (value === 'times-up') {
-      this.tidyUpRanking();
+      this.updateLosers();
     }
   }
 
