@@ -15,7 +15,7 @@ type Winner = {
 }
 
 class QualODesenho extends Game {
-  gameName = 'Qual O Desenho';
+  gameName = 'Qual o Desenho';
   gameType = 'round';
   word: string | undefined;
   playerGameData: guessingPlayer[];
@@ -53,7 +53,7 @@ class QualODesenho extends Game {
     this.io.to(id).emit('que-desenho-suggestions', suggestions);
   }
 
-  setGuessingPlayerList() {
+  beginGame() {
     this.log(`O jogo '${this.gameName}' foi iniciado.`);
     const room = this.runtimeStorage.rooms.get(this.roomCode);
 
@@ -80,18 +80,19 @@ class QualODesenho extends Game {
   }
 
   updateWinners(playerName: string, guessTime: number) {
-    this.log(`${playerName} acertou em ${guessTime}`);
+    (guessTime > 0) && this.log(`${playerName} acertou em ${guessTime}`);
+    
     const whoWon = this.playerGameData.find(p => p.nickname === playerName);
     if(!whoWon) return;
     
     whoWon.guessTime = guessTime;
     this.playerGameData.sort((a, b) => (a.guessTime - b.guessTime));
-    const winners = this.playerGameData.filter(p => p.guessTime > -1);
-    if(winners.length === this.playerGameData.length) return this.finishGame();
+    const whoPlayed = this.playerGameData.filter(p => p.guessTime !== -1);
+    if((this.playerGameData.length - whoPlayed.length) === 0) return this.finishGame();
     
     return this.io
       .to(this.roomCode)
-      .emit('updated-winners', JSON.stringify(winners));
+      .emit('updated-winners', JSON.stringify(whoPlayed));
   }
 
   finishGame() {
@@ -130,12 +131,12 @@ class QualODesenho extends Game {
   handleMessage(id: any, value: any, payload: any): void {
     if (value === 'que-desenho-suggestions') {
       this.sendWordOptions(id);
-      this.setGuessingPlayerList();
       return;
     }
 
     if (value === 'game-word-is') {
       this.setWord(payload);
+      this.beginGame();
       return;
     }
 
@@ -161,10 +162,13 @@ class QualODesenho extends Game {
 
   handleDisconnect(id: string): void {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    const whoLeft = room?.disconnectedPlayers.find(
-      (p) => p.socketID === id
-    )?.nickname;
-    this.log(`${whoLeft} saiu do jogo.`);
+    if(!room) return;
+    const whoLeft = room.disconnectedPlayers.find((p) => p.socketID === id);
+    if(!whoLeft) return;
+    const player = this.playerGameData.find(p => whoLeft.nickname === p.nickname);
+    
+    player && this.updateWinners(player.nickname, -100);
+    this.log(`${whoLeft.nickname} desconectou-se e não poderá mais participar desta rodada.`);
   }
 }
 
