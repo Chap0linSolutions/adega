@@ -15,7 +15,7 @@ type Winner = {
 }
 
 class QualODesenho extends Game {
-  gameName = 'Qual o Desenho';
+  gameName = 'Qual O Desenho';
   gameType = 'round';
   word: string | undefined;
   playerGameData: guessingPlayer[];
