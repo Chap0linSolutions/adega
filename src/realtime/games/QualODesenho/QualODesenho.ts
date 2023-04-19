@@ -76,10 +76,6 @@ class QualODesenho extends Game {
     );
   }
 
-  broadcastGuess(guess: string) {
-    this.io.to(this.roomCode).emit('new-guess-attempt', guess);
-  }
-
   updateWinners(playerName: string, guessTime: number) {
     (guessTime > 0) && this.log(`${playerName} acertou em ${guessTime}`);
     
@@ -89,7 +85,7 @@ class QualODesenho extends Game {
     whoWon.guessTime = guessTime;
     this.playerGameData.sort((a, b) => (a.guessTime - b.guessTime));
     const whoPlayed = this.playerGameData.filter(p => p.guessTime !== -1);
-    if((this.playerGameData.length - whoPlayed.length) === 0) return this.finishGame();
+    if(((this.playerGameData.length - whoPlayed.length) === 0) && !this.resultsHaveBeenSent) return this.finishGame();
     
     return this.io
       .to(this.roomCode)
@@ -99,8 +95,16 @@ class QualODesenho extends Game {
   finishGame() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return this.log('a sala desse jogo não existe mais (wtf?)');
-    const losers = this.playerGameData.filter(p => p.guessTime === -1);
-    losers && losers.forEach(loser => {
+    const hasWinners = this.playerGameData.filter(p => p.guessTime >= 0).length > 0;
+    let losers = this.playerGameData.filter(p => p.guessTime === -1);
+
+    if(!hasWinners && losers && losers.length > 0){
+      this.log(`Nenhum dos que conseguiu jogar acertou. O jogador da vez (${this.currentArtist}) bebe.`);
+      const artist = room.players.find(p => p.nickname === this.currentArtist);
+      artist && (artist.beers += 1);
+    }
+
+    hasWinners && losers && losers.forEach(loser => {
       try{
         let player = room.players.find(p => p.nickname === loser.nickname);
         if(player){
@@ -115,8 +119,6 @@ class QualODesenho extends Game {
     })
 
     this.log(`Jogo encerrado.`);
-    this.log(`Quem ganhou: ${this.playerGameData.filter(p => p.guessTime >= 0).map(p => p.nickname)}`);
-    this.log(`Quem bebeu: ${losers?.map((loser) => loser.nickname)}`);
     this.io
       .to(this.roomCode)
       .emit('results', JSON.stringify(this.playerGameData));
@@ -158,6 +160,7 @@ class QualODesenho extends Game {
     }
 
     if (value === 'times-up') {
+      if(this.resultsHaveBeenSent) return;
       this.finishGame();
     }
   }
