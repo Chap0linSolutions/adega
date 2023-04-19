@@ -20,6 +20,7 @@ class QualODesenho extends Game {
   word: string | undefined;
   playerGameData: guessingPlayer[];
   currentArtist: string;
+  resultsHaveBeenSent = false;
 
   constructor(io: Server, room: string) {
     super(io, room);
@@ -119,6 +120,7 @@ class QualODesenho extends Game {
     this.io
       .to(this.roomCode)
       .emit('results', JSON.stringify(this.playerGameData));
+    this.resultsHaveBeenSent = true;
   }
 
   private setWord(word: string) {
@@ -161,12 +163,12 @@ class QualODesenho extends Game {
   }
 
   handleDisconnect(id: string): void {
+    if(this.resultsHaveBeenSent) return;
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return;
     const whoLeft = room.disconnectedPlayers.find((p) => p.socketID === id);
     if(!whoLeft) return;
     const player = this.playerGameData.find(p => whoLeft.nickname === p.nickname);
-    
     player && this.updateWinners(player.nickname, -100);
     this.log(`${whoLeft.nickname} desconectou-se e não poderá mais participar desta rodada.`);
   }
