@@ -36,17 +36,12 @@ class QualODesenho extends Game {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
-  getWordSuggestions(num = 2) {
-    let suggestionsPool: string[] = [];
-    categories.forEach((wordList) => {
-      suggestionsPool = suggestionsPool.concat(wordList);
-    });
-
-    const suggestions = suggestionsPool
-      .sort(() => 0.5 - Math.random())
-      .slice(0, num);
-
-    return suggestions;
+  getWordSuggestions() {
+    const names: string[] = [];
+    categories.forEach((content, category) => names.push(category));
+    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random()).slice(0, 1);
+    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random()).slice(0, 1);
+    return [option1, option2];
   }
 
   sendWordOptions(id: any) {

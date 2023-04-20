@@ -175,25 +175,6 @@ categories.set('Personagens', [
   'Zurg',
 ]);
 
-categories.set('Filmes', [
-  'Star Wars',
-  'Titanic',
-  'Avatar',
-  'Vingadores',
-  'Harry Potter',
-  'Minions',
-  'Senhor dos Anéis',
-  'O Rei Leão',
-  'Shrek',
-  'E.T.',
-  'Crepúsculo',
-  'Rebelde',
-  'Transformers',
-  'Jogos Vorazes',
-  'A Era do Gelo',
-  'Procurando Nemo',
-]);
-
 categories.set('Objetos', [
   'Abajur',
   'Apontador',
