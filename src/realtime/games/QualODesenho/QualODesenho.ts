@@ -39,8 +39,8 @@ class QualODesenho extends Game {
   getWordSuggestions() {
     const names: string[] = [];
     categories.forEach((content, category) => names.push(category));
-    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random()).slice(0, 1);
-    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random()).slice(0, 1);
+    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random())[0];
+    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random())[0];
     return [option1, option2];
   }
 
