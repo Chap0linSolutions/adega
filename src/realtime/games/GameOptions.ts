@@ -13,6 +13,7 @@ export const gameList = [
   'Quem Sou Eu',
   'Jogo do Desafio',
   'Jogo da Verdade',
+  'Mestre da Mímica',
 ];
 
 export type GameListOptionType = {

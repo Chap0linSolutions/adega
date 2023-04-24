@@ -443,7 +443,8 @@ export const URL = (input: string) => {
     .replace(/,/g, '')
     .replace(/-/g, '')
     .replace(/á/g, 'a')
-    .replace(/é/g, 'e');
+    .replace(/é/g, 'e')
+    .replace(/í/g, 'i');
   return output;
 };
 

@@ -11,6 +11,7 @@ import { JogoDoDesafio } from './games/JogoDoDesafio/JogoDoDesafio';
 import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
 import Titanic from './games/Titanic';
+import MestreDaMimica from './games/MestreDaMimica';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
@@ -62,6 +63,9 @@ class Store {
     switch (gameName) {
       case 'Roulette':
         newGame = new Roulette(io, roomCode);
+        break;
+      case 'Mestre da Mímica':
+        newGame = new MestreDaMimica(io, roomCode);
         break;
       case 'O Escolhido':
         newGame = new OEscolhido(io, roomCode);
