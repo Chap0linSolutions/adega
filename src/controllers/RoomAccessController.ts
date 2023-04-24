@@ -7,7 +7,7 @@ export default class RoomAccessController {
   purgeEmptyOldRooms = () => {
     const activeRooms = Store.getInstance().rooms;
 
-    for (let [roomCode, room] of activeRooms) {
+    for (const [roomCode, room] of activeRooms) {
       if (
         room.players.length === 0 &&
         Date.now() > room.created_at + ROOM_EXPIRATION
