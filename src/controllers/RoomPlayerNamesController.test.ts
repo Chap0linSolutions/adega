@@ -1,5 +1,5 @@
-import RoomPlayerNameController from "./RoomPlayerNamesController";
-import Store from "../realtime/store";
+import RoomPlayerNameController from './RoomPlayerNamesController';
+import Store from '../realtime/store';
 import { getMockReq, getMockRes } from '@jest-mock/express';
 
 beforeAll(() => {
@@ -17,17 +17,19 @@ beforeAll(() => {
         avatarSeed: 'ZXCV',
         beers: 0,
         socketID: '',
-        currentTurn: false
+        currentTurn: false,
       },
-    ]
+    ],
   });
 });
 
-describe("RoomPlayerNameController", () => {
-  describe("checkNameAvailabiliy method", () => {
+describe('RoomPlayerNameController', () => {
+  describe('checkNameAvailabiliy method', () => {
     it("Should return 200 if user's name is available", () => {
       const controller = new RoomPlayerNameController();
-      const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Maria' } });
+      const req = getMockReq({
+        params: { roomCode: 'ABCD', userName: 'Maria' },
+      });
       const { res } = getMockRes();
 
       controller.checkNameAvailabiliy(req, res);
@@ -37,7 +39,9 @@ describe("RoomPlayerNameController", () => {
 
     it("Should return 409 if user's name isn't available", () => {
       const controller = new RoomPlayerNameController();
-      const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Fred' } });
+      const req = getMockReq({
+        params: { roomCode: 'ABCD', userName: 'Fred' },
+      });
       const { res } = getMockRes();
 
       controller.checkNameAvailabiliy(req, res);
