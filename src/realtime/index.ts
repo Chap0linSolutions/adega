@@ -23,6 +23,12 @@ class SocketConnection {
       callback(reply);
     });
 
+    this.socket.on('kick-player', (value) => {
+      this.io
+        .to(value.roomCode)
+        .emit('kick-player', value.nickname);
+    });
+
     this.socket.on('room-exists', (roomCode) => {
       this.verifyIfRoomExists(roomCode);
     });
