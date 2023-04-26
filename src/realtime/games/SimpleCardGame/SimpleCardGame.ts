@@ -26,12 +26,14 @@ class SimpleCardGame extends Game {
     console.log(`${this.gameName}!`);
     if (this.gameName === 'Who Drank') {
       const room = this.runtimeStorage.rooms.get(this.roomCode);
-      this.playerGameData = room!.players.map((p) => {
-        return {
-          nickname: p.nickname,
-          avatarSeed: p.avatarSeed,
-        };
-      });
+      if (room) {
+        this.playerGameData = room.players.map((p) => {
+          return {
+            nickname: p.nickname,
+            avatarSeed: p.avatarSeed,
+          };
+        });
+      }
     }
   }
 
@@ -39,7 +41,7 @@ class SimpleCardGame extends Game {
     console.log(`Player ${id} disconnected`);
   }
 
-  handleMessage(id: any, value: any, payload: any): void {
+  handleMessage(id: any, value: any): void {
     if (value === 'end-game') {
       if (this.gameName === 'Who Drank') {
         return handleMoving(this.io, this.roomCode, '/SelectNextGame');

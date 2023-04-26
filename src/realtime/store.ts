@@ -7,7 +7,10 @@ import OEscolhido from './games/OEscolhido';
 import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
+import { JogoDoDesafio } from './games/JogoDoDesafio/JogoDoDesafio';
+import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
+import Titanic from './games/Titanic';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
@@ -22,6 +25,7 @@ export interface player {
 
 export interface RoomContent {
   players: player[];
+  playerOrder: string[];
   disconnectedPlayers: player[];
   currentGame: Game | null;
   currentPage: number | null;
@@ -71,6 +75,15 @@ class Store {
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
         break;
+      case 'Jogo do Desafio':
+        newGame = new JogoDoDesafio(io, roomCode);
+        break;
+      case 'Jogo da Verdade':
+        newGame = new JogoDaVerdade(io, roomCode);
+        break;
+      case 'Titanic':
+        newGame = new Titanic(io, roomCode);
+        break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);
         break;
@@ -89,6 +102,7 @@ class Store {
   static emptyRoom(): RoomContent {
     return {
       players: [],
+      playerOrder: [],
       disconnectedPlayers: [],
       currentGame: null,
       currentPage: null,

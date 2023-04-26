@@ -3,7 +3,7 @@ import Game from '../game';
 import { handleMoving } from '../../index';
 
 enum Times {
-  Disconnected= -20000,
+  Disconnected = -20000,
   InvalidShot = -10000,
   GameOver = 10000,
 }
@@ -53,7 +53,8 @@ class BangBang extends Game {
   // Add players and Start game
   public checkForGameStart(id: any) {
     try {
-      this.playerGameData.find((p) => p.id === id)!.ready = true;
+      const player = this.playerGameData.find((p) => p.id === id);
+      if (player) player.ready = true;
     } catch (e) {
       this.log(
         `Algo deu errado ao mudar o estado 'ready' do jogador de ID ${id}.`
@@ -98,16 +99,23 @@ class BangBang extends Game {
   // Gameplay
   handleShot(id: string, payload: any) {
     try {
-      this.playerGameData.find((p) => p.id === id)!.shotTime = payload.time;
-      this.playerGameData.sort((a, b) => b.shotTime - a.shotTime);
-      if (!this.checkForGameConclusion()) {
-        const partialRanking = this.playerGameData.filter(
-          (p) => p.shotTime > Times.Disconnected && p.shotTime !== 0
+      const player = this.playerGameData.find((p) => p.id === id);
+      if (player) {
+        player.shotTime = payload.time;
+        this.playerGameData.sort((a, b) => b.shotTime - a.shotTime);
+        if (!this.checkForGameConclusion()) {
+          const partialRanking = this.playerGameData.filter(
+            (p) => p.shotTime > Times.Disconnected && p.shotTime !== 0
+          );
+          this.io.to(this.roomCode).emit('message', {
+            message: 'bangbang_result',
+            ranking: partialRanking,
+          });
+        }
+      } else {
+        this.log(
+          `Erro, jogador de ID ${id} não encontrado. Não foi possível computar o tempo dele.`
         );
-        this.io.to(this.roomCode).emit('message', {
-          message: 'bangbang_result',
-          ranking: partialRanking,
-        });
       }
     } catch (e) {
       this.log(
@@ -123,7 +131,8 @@ class BangBang extends Game {
       this.log(
         `O jogador ${this.playerGameData[index].nickname} desconectou-se e não poderá mais voltar nesta rodada.`
       );
-      this.playerGameData[index]!.shotTime = Times.Disconnected;
+      const player = this.playerGameData[index];
+      if (player) player.shotTime = Times.Disconnected;
       this.checkForGameConclusion();
     } else {
       this.log(`O jogador de id ${id} não está na partida (wtf?).`);
@@ -137,7 +146,9 @@ class BangBang extends Game {
       const whoShotOnTime = this.playerGameData.filter(
         (p) => p.shotTime > Times.InvalidShot
       );
-      const whoDidnt = this.playerGameData.filter((p) => p.shotTime === Times.InvalidShot);
+      const whoDidnt = this.playerGameData.filter(
+        (p) => p.shotTime === Times.InvalidShot
+      );
 
       const firstToShoot = whoShotOnTime[0];
       const lastToShoot =
@@ -162,7 +173,9 @@ class BangBang extends Game {
       console.log('');
       this.io.to(this.roomCode).emit('message', {
         message: 'bangbang_ranking',
-        ranking: this.playerGameData.filter((p) => p.shotTime > Times.Disconnected),
+        ranking: this.playerGameData.filter(
+          (p) => p.shotTime > Times.Disconnected
+        ),
       });
     } catch (e) {
       this.log(`Algo deu errado ao computar os perdedores.`);
@@ -177,11 +190,13 @@ class BangBang extends Game {
         (p) => p.nickname === whoDrinks.nickname
       );
       if (index > -1) {
-        room.players[index]!.beers += 1;
+        const player = room.players[index];
+        if (player) player.beers += 1;
       } else {
-        room.disconnectedPlayers.find(
+        const player = room.disconnectedPlayers.find(
           (p) => p.nickname === whoDrinks.nickname
-        )!.beers += 1;
+        );
+        if (player) player.beers += 1;
       }
     }
   }
