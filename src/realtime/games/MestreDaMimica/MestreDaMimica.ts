@@ -1,7 +1,8 @@
 import Game from '../game';
 import { Server } from 'socket.io';
-import { categorias } from './names';
-import { handleMoving } from '../..';
+import { categories } from './names';
+import { player } from '../../store';
+import { handleMoving } from '../../index';
 
 type Suggestion = {
   category: string,
@@ -11,7 +12,7 @@ type Suggestion = {
 class MestreDaMimica extends Game {
   gameName = 'Mestre da Mímica';
   gameType = 'round';
-  playerGameData: string[];
+  playerGameData: player[];
 
   constructor(io: Server, room: string) {
     super(io, room);
@@ -24,19 +25,53 @@ class MestreDaMimica extends Game {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
-  finish(winners: string[]) {
+  getWordSuggestions() {
+    const names: string[] = [];
+    categories.forEach((content, category) => names.push(category));
+    names.sort(() => 0.5 - Math.random());
+    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random())[0];
+    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random())[0];
+    const option3 = categories.get(names[2])?.sort(() => 0.5 - Math.random())[0];
+    
+    const results: Suggestion[] = [
+      {category: names[0], word: option1 as string},
+      {category: names[1], word: option2 as string},
+      {category: names[2], word: option3 as string},
+    ];
+
+    return results;
+  }
+
+  begin(gameRoom: number) {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if(!room) return;
+    this.log('O jogo foi iniciado. Enviando sugestões...');
+    this.playerGameData = [...room.players];
+    const suggestions: Suggestion[] = this.getWordSuggestions();
+    this.io.to(this.roomCode).emit('mimic-suggestions', JSON.stringify(suggestions));
+    return handleMoving(this.io, this.roomCode, gameRoom);
+  }
+
+  finish(correctGuesses: Suggestion[]) {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if(!room) return;
+    this.log(`Jogo encerrado. Nomes acertados: ${correctGuesses.length}`);
+  
+    const drinkAmount = 2 - correctGuesses.length;
+
+    room.players.forEach(p => {
+      p.beers += (drinkAmount >= 0)? drinkAmount : 0;
+    })
+    room.disconnectedPlayers.forEach(p => {
+      p.beers += (drinkAmount >= 0)? drinkAmount : 0;
+    })
+    this.io.to(this.roomCode).emit('game-results-are', correctGuesses);
   }
 
 
   handleMessage(id: any, value: any, payload: any): void {
     if(value === 'mimic-suggestions'){
-
-      const suggestions:Suggestion[] = [
-        {category: 'personagem', word: 'Detona Ralph'},
-        {category: 'objeto', word: 'Martelo'},
-        {category: 'animal', word: 'Tubarão'},
-      ]
-      this.io.to(this.roomCode).emit('mimic-suggestions', JSON.stringify(suggestions));
+      this.begin(payload);
       return;
     }
 
@@ -50,17 +85,17 @@ class MestreDaMimica extends Game {
     }
 
     if(value === 'game-results-are'){
-      this.io.to(this.roomCode).emit('game-results-are', payload);
+      this.finish(payload);
       return;
     }
   }
 
   handleDisconnect(id: string): void {
-    const room = this.runtimeStorage.rooms.get(this.roomCode);
-    const whoLeft = room?.disconnectedPlayers.find(
-      (p) => p.socketID === id
-    )?.nickname;
-    this.log(`${whoLeft} saiu do jogo.`);
+    const index = this.playerGameData.findIndex(p => p.nickname === id);
+    this.log(`O jogador de ID de socket ${id} desconectou-se e não poderá mais participar desta rodada.`)
+    if(index > -1) {
+      this.playerGameData.splice(index, 1);
+    }
   }
 }
 
