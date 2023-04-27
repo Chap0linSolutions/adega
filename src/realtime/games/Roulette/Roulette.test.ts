@@ -69,10 +69,6 @@ describe('Roulette Class', () => {
       const rouletteInstance = new Roulette(io, 'ABCD');
       const mockStart = jest.spyOn(rouletteInstance, 'startGame');
       rouletteInstance.handleMessage(testID, 'start-game', '');
-      expect(mockStart).not.toBeCalled();
-
-      rouletteInstance.hasSelectedNextGame = true;
-      rouletteInstance.handleMessage(testID, 'start-game', '');
       expect(mockStart).toBeCalled();
     });
 
@@ -139,13 +135,17 @@ describe('Roulette Class', () => {
       const room = Store.getInstance().rooms.get('ABCD');
       if (!room) return;
       room.options.gamesList = gameList;
-      expect(rouletteInstance.hasSelectedNextGame).toBe(false);
-
       rouletteInstance.handleNextGameSelection();
-      expect(rouletteInstance.hasSelectedNextGame).toBe(true);
       expect(
         room.options.gamesList.find((game) => game.counter > 0)
       ).toBeDefined();
+    });
+
+    it('should return without trying to select a game if room does not exist', () => {
+      const rouletteInstance = new Roulette(io, 'WXYZ');
+      const logSpy = jest.spyOn(rouletteInstance, 'log');
+      rouletteInstance.handleNextGameSelection();
+      expect(logSpy).not.toBeCalled();
     });
   });
 

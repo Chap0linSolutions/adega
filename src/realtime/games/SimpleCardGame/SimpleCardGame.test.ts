@@ -25,16 +25,11 @@ describe('SimpleCardGame Class', () => {
           nickname: 'Fred',
           avatarSeed: 'ZXCV',
           beers: 0,
-          socketID: '',
+          socketID: '1234',
           currentTurn: false,
         },
       ],
     });
-  });
-
-  afterEach(() => {
-    // restore the spy created with spyOn
-    jest.restoreAllMocks();
   });
 
   describe('Constructor', () => {
@@ -70,26 +65,47 @@ describe('SimpleCardGame Class', () => {
     it('should not be called during a game', () => {
       const simpleCardInstance = new SimpleCardGame(
         io,
-        'testRoom',
+        'ABCD',
         'Test Game Name'
       );
-      simpleCardInstance.handleMessage(io, 'not-end-game', '');
+      simpleCardInstance.handleMessage(io, 'not-end-game');
       expect(mockHandleMoving).not.toBeCalled();
     });
 
     it('should redirect to Who Drank after game', () => {
       const simpleCardInstance = new SimpleCardGame(
         io,
-        'testRoom',
+        'ABCD',
         'Test Game Name'
       );
-      simpleCardInstance.handleMessage(io, 'end-game', '');
+      simpleCardInstance.handleMessage(io, 'end-game');
       expect(mockHandleMoving).toBeCalled();
+      mockHandleMoving.mockClear();
     });
 
-    // it('should redirect back to roulette after finishing round', () => {
-    //     const nextMove = simpleCardInstance.handleMessage(io, 'end-game', '');
-    //     expect(nextMove).toBe(handleMoving(io, 'ABCD', '/WhoDrank'));
-    // })
+    it('should redirect back to roulette after finishing round', () => {
+      const simpleCardInstance = new SimpleCardGame(
+        io,
+        'ABCD',
+        'Who Drank'
+      );
+      const nextMove = simpleCardInstance.handleMessage(io, 'end-game');
+      expect(mockHandleMoving).toBeCalled();
+      mockHandleMoving.mockClear();
+    })
+  });
+
+  describe('handleDisconnect method', () => {
+    it('should log disconnection message', () => {
+      const simpleCardInstance = new SimpleCardGame(
+        io,
+        'ABCD',
+        'Test Game Name'
+      );
+      const logSpy = jest.spyOn(simpleCardInstance, 'log');
+      simpleCardInstance.handleDisconnect('1234');
+
+      expect(logSpy).toBeCalledWith(`Player 1234 disconnected`);
+    });
   });
 });

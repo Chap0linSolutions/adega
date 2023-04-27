@@ -74,7 +74,7 @@ describe('OEscolhido Class', () => {
       const oEscolhidoInstance = new OEscolhido(io, 'ABCD');
       const mockFinishVoting = jest.spyOn(oEscolhidoInstance, 'finishVoting');
 
-      oEscolhidoInstance.handleMessage(testID, 'vote-results', '');
+      oEscolhidoInstance.handleMessage(testID, 'times-up', '');
       expect(mockFinishVoting).toBeCalled();
     });
   });
