@@ -23,9 +23,7 @@ class SocketConnection {
     });
 
     this.socket.on('kick-player', (value) => {
-      this.io
-        .to(value.roomCode)
-        .emit('kick-player', value.nickname);
+      this.io.to(value.roomCode).emit('kick-player', value.nickname);
     });
 
     this.socket.on('room-exists', (roomCode) => {
@@ -281,6 +279,7 @@ class SocketConnection {
             ongoingGame.gameName === 'O Escolhido' ||
             ongoingGame.gameName === 'Bang Bang' ||
             ongoingGame.gameName === 'Titanic' ||
+            ongoingGame.gameName === 'Mestre da Mímica' ||
             ongoingGame.gameName === 'Qual O Desenho'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
@@ -445,7 +444,11 @@ export const URL = (input: string) => {
     .replace(/,/g, '')
     .replace(/-/g, '')
     .replace(/á/g, 'a')
-    .replace(/é/g, 'e');
+    .replace(/ê/g, 'e')
+    .replace(/é/g, 'e')
+    .replace(/í/g, 'i')
+    .replace(/ó/g, 'o')
+    .replace(/ô/g, 'o')
   return output;
 };
 

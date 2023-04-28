@@ -14,6 +14,7 @@ export const gameList = [
   'Qual O Desenho',
   'Jogo do Desafio',
   'Jogo da Verdade',
+  'Mestre da Mímica',
 ];
 
 export type GameListOptionType = {
