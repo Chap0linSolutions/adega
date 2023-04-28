@@ -133,7 +133,6 @@ categories.set('Personagens', [
   'Stitch',
   'Sininho',
   'Tarzan',
-  'Ursinho Pooh',
   'Úrsula',
   'Woody',
   'Bart Simpson',
