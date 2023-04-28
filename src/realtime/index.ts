@@ -24,9 +24,7 @@ class SocketConnection {
     });
 
     this.socket.on('kick-player', (value) => {
-      this.io
-        .to(value.roomCode)
-        .emit('kick-player', value.nickname);
+      this.io.to(value.roomCode).emit('kick-player', value.nickname);
     });
 
     this.socket.on('room-exists', (roomCode) => {
