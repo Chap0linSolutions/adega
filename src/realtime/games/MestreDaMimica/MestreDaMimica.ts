@@ -4,11 +4,6 @@ import { categories } from './names';
 import { player } from '../../store';
 import { handleMoving } from '../../index';
 
-type Suggestion = {
-  category: string,
-  word: string,
-}
-
 class MestreDaMimica extends Game {
   gameName = 'Mestre da Mímica';
   gameType = 'round';
@@ -26,20 +21,10 @@ class MestreDaMimica extends Game {
   }
 
   getWordSuggestions() {
-    const names: string[] = [];
-    categories.forEach((content, category) => names.push(category));
+    let names: string[] = [];
+    categories.forEach((content) => names = [...names, ...content]);
     names.sort(() => 0.5 - Math.random());
-    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random())[0];
-    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random())[0];
-    const option3 = categories.get(names[2])?.sort(() => 0.5 - Math.random())[0];
-    
-    const results: Suggestion[] = [
-      {category: names[0], word: option1 as string},
-      {category: names[1], word: option2 as string},
-      {category: names[2], word: option3 as string},
-    ];
-
-    return results;
+    return [names[0], names[1], names[2]];
   }
 
   begin(gameRoom: number) {
@@ -47,12 +32,13 @@ class MestreDaMimica extends Game {
     if(!room) return;
     this.log('O jogo foi iniciado. Enviando sugestões...');
     this.playerGameData = [...room.players];
-    const suggestions: Suggestion[] = this.getWordSuggestions();
+    const suggestions: string[] = this.getWordSuggestions();
+    console.log(suggestions);
     this.io.to(this.roomCode).emit('mimic-suggestions', JSON.stringify(suggestions));
     return handleMoving(this.io, this.roomCode, gameRoom);
   }
 
-  finish(correctGuesses: Suggestion[]) {
+  finish(correctGuesses: string[]) {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return;
     this.log(`Jogo encerrado. Nomes acertados: ${correctGuesses.length}`);
