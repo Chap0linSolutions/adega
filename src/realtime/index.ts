@@ -286,7 +286,8 @@ class SocketConnection {
           } else if (
             ongoingGame.gameName === 'O Escolhido' ||
             ongoingGame.gameName === 'Bang Bang' ||
-            ongoingGame.gameName === 'Titanic'
+            ongoingGame.gameName === 'Titanic' ||
+            ongoingGame.gameName === 'Qual O Desenho'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname
