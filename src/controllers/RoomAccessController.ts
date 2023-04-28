@@ -28,7 +28,7 @@ export default class RoomAccessController {
 
   async createRoom(req: Request, res: Response) {
     const activeRooms = Store.getInstance().rooms;
-    this.purgeEmptyOldRooms();
+    // this.purgeEmptyOldRooms();
 
     let newRoomCode = '';
     do {
