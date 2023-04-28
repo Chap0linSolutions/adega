@@ -7,6 +7,7 @@ import OEscolhido from './games/OEscolhido';
 import QuemSouEu from './games/QuemSouEu';
 import Game from './games/game';
 import Roulette from './games/Roulette';
+import QualODesenho from './games/QualODesenho';
 import { JogoDoDesafio } from './games/JogoDoDesafio/JogoDoDesafio';
 import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
@@ -33,6 +34,7 @@ export interface RoomContent {
   lastGameName: string | null;
   options: OptionsType;
   ownerId: string | null;
+  created_at: number;
 }
 
 class Store {
@@ -76,6 +78,9 @@ class Store {
       case 'Quem Sou Eu':
         newGame = new QuemSouEu(io, roomCode);
         break;
+      case 'Qual O Desenho':
+        newGame = new QualODesenho(io, roomCode);
+        break;
       case 'Eu Nunca':
         newGame = new EuNunca(io, roomCode);
         break;
@@ -115,6 +120,7 @@ class Store {
         gamesList: defaultGameList,
       },
       ownerId: null,
+      created_at: Date.now(),
     };
   }
 }
