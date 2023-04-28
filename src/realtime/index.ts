@@ -444,8 +444,11 @@ export const URL = (input: string) => {
     .replace(/,/g, '')
     .replace(/-/g, '')
     .replace(/á/g, 'a')
+    .replace(/ê/g, 'e')
     .replace(/é/g, 'e')
-    .replace(/í/g, 'i');
+    .replace(/í/g, 'i')
+    .replace(/ó/g, 'o')
+    .replace(/ô/g, 'o')
   return output;
 };
 
