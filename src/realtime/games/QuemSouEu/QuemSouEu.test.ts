@@ -87,5 +87,44 @@ describe('QuemSouEu Class', () => {
     });
   });
 
-  //TODO: tests for updateNames, finish, handleDisconnect
+  describe('updateNames method', () => {
+    it("should fill players' characters", () => {
+      const quemSouEuInstance = new QuemSouEu(io, 'ABCD');
+      const logSpy = jest.spyOn(quemSouEuInstance, 'log');
+      quemSouEuInstance.names = ['Scooby',];
+      quemSouEuInstance.updateNames();
+
+      expect(logSpy).toBeCalledWith('Lista de jogadores e papeis:');
+      expect(quemSouEuInstance.playerGameData[0].whoPlayerIs).toBe('Scooby');
+    });
+  });
+
+  describe('finish method', () => {
+    it('should increase the number of beers for the losers', () => {
+      const testRoom = Store.getInstance().rooms.get('ABCD');
+      if(!testRoom) return;
+
+      expect(testRoom.players[0].beers).toEqual(0);
+      const quemSouEuInstance = new QuemSouEu(io, 'ABCD');
+      quemSouEuInstance.playerGameData.push({player: 'Fred', whoPlayerIs: 'Shaggy'});
+      quemSouEuInstance.playerGameData.push({player: 'Daphne', whoPlayerIs: 'Velma'});
+
+      quemSouEuInstance.finish(['Daphne']);
+      expect(testRoom.players[0].beers).toBeGreaterThan(0);
+    });
+  });
+
+  describe('handleDisconnect method', () => {
+    it('should log the player who disconnected', () => {
+      const testRoom = Store.getInstance().rooms.get('ABCD');
+      if(!testRoom) return;
+
+      testRoom.disconnectedPlayers.push(testRoom.players[0]);
+      const quemSouEuInstance = new QuemSouEu(io, 'ABCD');
+      const logSpy = jest.spyOn(quemSouEuInstance, 'log');
+
+      quemSouEuInstance.handleDisconnect(testID);
+      expect(logSpy).toBeCalledWith(`Fred saiu do jogo.`);
+    });
+  });
 });
