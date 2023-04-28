@@ -32,6 +32,7 @@ export interface RoomContent {
   lastGameName: string | null;
   options: OptionsType;
   ownerId: string | null;
+  created_at: number;
 }
 
 class Store {
@@ -111,6 +112,7 @@ class Store {
         gamesList: defaultGameList,
       },
       ownerId: null,
+      created_at: Date.now(),
     };
   }
 }
