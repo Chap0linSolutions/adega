@@ -28,7 +28,7 @@ describe("RoomAccessController", () => {
     it("Should return 200 when room exist", () => {
       const controller = new RoomAccessController();
       const req = getMockReq({ params: { code: 'ABCD' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.joinRoom(req, res);
       expect(res.status).toBeCalledWith(200);
@@ -38,7 +38,7 @@ describe("RoomAccessController", () => {
     it("Should return 404 when room doesn't exist", () => {
       const controller = new RoomAccessController();
       const req = getMockReq({ params: { code: 'EFGH' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.joinRoom(req, res);
       expect(res.status).toBeCalledWith(404);
@@ -50,7 +50,7 @@ describe("RoomAccessController", () => {
     it("Should return 200 if room creation works well", () => {
       const controller = new RoomAccessController();
       const req = getMockReq();
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.createRoom(req, res);
       expect(res.status).toBeCalledWith(200);
@@ -62,7 +62,7 @@ describe("RoomAccessController", () => {
     it("Should return 200 if user was in the room", () => {
       const controller = new RoomAccessController();
       const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Fred', avatarSeed: 'QWER' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.checkIfUserWasThere(req, res);
       expect(res.status).toBeCalledWith(200);
@@ -72,7 +72,7 @@ describe("RoomAccessController", () => {
     it("Should return 403 if user wasn't in the room", () => {
       const controller = new RoomAccessController();
       const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Caio', avatarSeed: 'ASDF' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.checkIfUserWasThere(req, res);
       expect(res.status).toBeCalledWith(403);
@@ -82,7 +82,7 @@ describe("RoomAccessController", () => {
     it("Should return 410 if the room doesn't exist anymore", () => {
       const controller = new RoomAccessController();
       const req = getMockReq({ params: { roomCode: 'EFGH', userName: 'Fred', avatarSeed: 'QWER' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.checkIfUserWasThere(req, res);
       expect(res.status).toBeCalledWith(410);

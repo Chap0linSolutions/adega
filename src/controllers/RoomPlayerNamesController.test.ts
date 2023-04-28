@@ -28,7 +28,7 @@ describe("RoomPlayerNameController", () => {
     it("Should return 200 if user's name is available", () => {
       const controller = new RoomPlayerNameController();
       const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Maria' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.checkNameAvailabiliy(req, res);
       expect(res.status).toBeCalledWith(200);
@@ -38,7 +38,7 @@ describe("RoomPlayerNameController", () => {
     it("Should return 409 if user's name isn't available", () => {
       const controller = new RoomPlayerNameController();
       const req = getMockReq({ params: { roomCode: 'ABCD', userName: 'Fred' } });
-      const { res, next } = getMockRes();
+      const { res } = getMockRes();
 
       controller.checkNameAvailabiliy(req, res);
       expect(res.status).toBeCalledWith(409);
