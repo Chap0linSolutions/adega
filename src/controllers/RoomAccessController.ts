@@ -1,7 +1,21 @@
 import { Request, Response } from 'express';
 import Store from '../realtime/store';
 
+const ROOM_EXPIRATION = 10 * 60 * 1000;
+
 export default class RoomAccessController {
+  purgeEmptyOldRooms = () => {
+    const activeRooms = Store.getInstance().rooms;
+
+    for (const [roomCode, room] of activeRooms) {
+      if (
+        room.players.length === 0 &&
+        Date.now() > room.created_at + ROOM_EXPIRATION
+      )
+        activeRooms.delete(roomCode);
+    }
+  };
+
   async joinRoom(req: Request, res: Response) {
     const activeRooms = Store.getInstance().rooms;
     const roomCode = req.params.code;
@@ -14,17 +28,15 @@ export default class RoomAccessController {
 
   async createRoom(req: Request, res: Response) {
     const activeRooms = Store.getInstance().rooms;
+    this.purgeEmptyOldRooms();
+
     let newRoomCode = '';
-    // TODO: implement better DDoS protection method
-    if (activeRooms.keys.length <= 500) {
-      do {
-        newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-      } while (activeRooms.has(newRoomCode));
-      activeRooms.set(newRoomCode, Store.emptyRoom());
-      res.status(200).send(newRoomCode);
-    } else {
-      res.status(503).send('Limite de salas atingido');
-    }
+    do {
+      newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+    } while (activeRooms.has(newRoomCode));
+    activeRooms.set(newRoomCode, Store.emptyRoom());
+
+    res.status(200).send(newRoomCode);
   }
 
   async checkIfUserWasThere(req: Request, res: Response) {

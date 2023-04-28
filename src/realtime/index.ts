@@ -280,7 +280,8 @@ class SocketConnection {
           } else if (
             ongoingGame.gameName === 'O Escolhido' ||
             ongoingGame.gameName === 'Bang Bang' ||
-            ongoingGame.gameName === 'Titanic'
+            ongoingGame.gameName === 'Titanic' ||
+            ongoingGame.gameName === 'Qual O Desenho'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname
@@ -429,6 +430,9 @@ class SocketConnection {
 function realtime(io: Server) {
   io.on('connection', (socket: Socket) => {
     new SocketConnection(io, socket);
+    socket.on('STRESS TEST: client event', (timeStampClient) => {
+      socket.emit('STRESS TEST: server event', timeStampClient);
+    });
   });
 }
 
