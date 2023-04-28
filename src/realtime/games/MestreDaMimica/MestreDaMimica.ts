@@ -33,14 +33,15 @@ class MestreDaMimica extends Game {
     this.log('O jogo foi iniciado. Enviando sugestões...');
     this.playerGameData = [...room.players];
     const suggestions: string[] = this.getWordSuggestions();
-    console.log(suggestions);
     this.io.to(this.roomCode).emit('mimic-suggestions', JSON.stringify(suggestions));
     return handleMoving(this.io, this.roomCode, gameRoom);
   }
 
-  finish(correctGuesses: string[]) {
+  finish(stringifiedGuesses: string) {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return;
+
+    const correctGuesses = JSON.parse(stringifiedGuesses);
     this.log(`Jogo encerrado. Nomes acertados: ${correctGuesses.length}`);
   
     const drinkAmount = 2 - correctGuesses.length;
@@ -51,7 +52,7 @@ class MestreDaMimica extends Game {
     room.disconnectedPlayers.forEach(p => {
       p.beers += (drinkAmount >= 0)? drinkAmount : 0;
     })
-    this.io.to(this.roomCode).emit('game-results-are', correctGuesses);
+    this.io.to(this.roomCode).emit('game-results-are', stringifiedGuesses);
   }
 
 
@@ -78,7 +79,6 @@ class MestreDaMimica extends Game {
 
   handleDisconnect(id: string): void {
     const index = this.playerGameData.findIndex(p => p.nickname === id);
-    this.log(`O jogador de ID de socket ${id} desconectou-se e não poderá mais participar desta rodada.`)
     if(index > -1) {
       this.playerGameData.splice(index, 1);
     }
