@@ -1,6 +1,5 @@
 import { Socket, Server } from 'socket.io';
 import Store, { player, RoomContent } from './store';
-import { EuNunca } from './games/EuNunca/EuNunca';
 
 class SocketConnection {
   socket: Socket;
@@ -71,11 +70,6 @@ class SocketConnection {
       const roomCode = value.roomCode;
       const beers = value.beers;
       this.updateBeers(roomCode, playersWhoDrank, beers);
-    });
-
-    this.socket.on('eu-nunca-suggestions', () => {
-      const suggestions = EuNunca.getStandardSuggestions();
-      this.socket.emit('eu-nunca-suggestions', suggestions);
     });
 
     this.socket.on('message', (value) => {
@@ -429,8 +423,6 @@ class SocketConnection {
           }
         });
       }
-
-      console.log(`\n\n\nNEW ORDER LIST:\n${currentRoom.playerOrder}\n\n\n\n`);
     }
   }
 }
