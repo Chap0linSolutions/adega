@@ -310,13 +310,14 @@ class SocketConnection {
           targetRoom = p.roomCode;
           console.log(`Sala ${room[0]} - ${p.nickname} desconectou-se.`);
 
-          if (p.currentTurn == true && players.length > 0) {
-            if (room[1].currentGame !== null) {
-              this.updateTurn(targetRoom);
-              const currentTurnName = getTurn(targetRoom);
+          if (p.currentTurn == true && room[1].currentGame !== null) {
+            this.updateTurn(targetRoom);
+            const currentTurnName = getTurn(targetRoom);
+            this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
+            if(room[1].currentGame.gameName !== 'Quem Sou Eu'){
               handleMoving(this.io, targetRoom, '/SelectNextGame');
-              this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
-              //TODO: pop-up de aviso que o jogador da vez caiu por isso o retorno à pagina da roleta
+            } else {
+              this.io.to(targetRoom).emit('original-player-is-down');
             }
           }
         }
