@@ -5,6 +5,7 @@ import { categorias } from './names';
 type whoPlayer = {
   player: string;
   whoPlayerIs: string;
+  disconnected: boolean;
 };
 
 class QuemSouEu extends Game {
@@ -28,18 +29,36 @@ class QuemSouEu extends Game {
     console.log(`Sala ${this.roomCode} - ${message}`);
   }
 
+  sendActivePlayers() {
+    const activePlayers = this.playerGameData.filter(p => !p.disconnected);
+    this.io
+      .to(this.roomCode)
+      .emit('players-and-names-are', JSON.stringify(activePlayers));
+    this.log('Jogadores ativos:');
+    console.log(activePlayers.map(p => ({player: p.player, whoPlayerIs: p.whoPlayerIs})));
+  }
+
   updateNames() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     room &&
       room.players.forEach((player) => {
         this.pickNameFor(player.nickname);
       });
-    this.io
-      .to(this.roomCode)
-      .emit('players-and-names-are', JSON.stringify(this.playerGameData));
+    this.sendActivePlayers();
+  }
 
-    this.log('Lista de jogadores e papeis:');
-    console.log(this.playerGameData);
+  getNewNameFor(playerName: string){
+    if(!this.names) return;
+    const namesInUse = this.playerGameData.map((p) => p.whoPlayerIs);
+    const availableNames = this.names.filter((name) => !namesInUse.includes(name));
+    const index = this.playerGameData.findIndex(p => p.player === playerName);
+    
+    this.playerGameData[index] = {
+      ...this.playerGameData[index],
+      whoPlayerIs: availableNames[Math.floor(availableNames.length * Math.random())],
+    }
+    
+    this.sendActivePlayers();
   }
 
   finish(winners: string[]) {
@@ -66,12 +85,12 @@ class QuemSouEu extends Game {
     return false;
   }
 
-  private pickNameFor(player: string) {
+  private pickNameFor(playerName: string) {
     if (this.names) {
-      if (this.playerGameData.map((p) => p.player).includes(player)) {
-        this.log(
-          `Sala ${this.roomCode} - O jogador "${player}" já possui um nome.`
-        );
+      if (this.playerGameData.map((p) => p.player).includes(playerName)) {
+        this.log(`Sala ${this.roomCode} - O jogador "${playerName}" já possui um nome.`);
+        const player = this.playerGameData.find(p => p.player === playerName);
+        player && (player.disconnected = false);
         return;
       }
 
@@ -81,9 +100,10 @@ class QuemSouEu extends Game {
       );
 
       this.playerGameData.push({
-        player: player,
+        player: playerName,
         whoPlayerIs:
           availableNames[Math.floor(availableNames.length * Math.random())],
+        disconnected: false,
       });
     }
   }
@@ -92,6 +112,16 @@ class QuemSouEu extends Game {
     if (value === 'game-category-is') {
       this.setCategory(payload) && this.updateNames();
       return;
+    }
+
+    if (value === 'send-me-a-new-name') {
+      const whoAsked = this.runtimeStorage.rooms
+        .get(this.roomCode)
+        ?.players.find((p) => p.socketID === id);
+      
+      if(!whoAsked) return;
+      this.log(`O jogador ${whoAsked?.nickname} pediu para trocar de nome.`);
+      this.getNewNameFor(whoAsked.nickname);
     }
 
     if (value === 'update-me') {
@@ -119,6 +149,9 @@ class QuemSouEu extends Game {
       (p) => p.socketID === id
     )?.nickname;
     this.log(`${whoLeft} saiu do jogo.`);
+    const player = this.playerGameData.find(p => p.player === whoLeft);
+    player && (player.disconnected = true);
+    this.sendActivePlayers();
   }
 }
 
