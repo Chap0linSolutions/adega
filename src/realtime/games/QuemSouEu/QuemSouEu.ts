@@ -47,6 +47,20 @@ class QuemSouEu extends Game {
     this.sendActivePlayers();
   }
 
+  getNewNameFor(playerName: string){
+    if(!this.names) return;
+    const namesInUse = this.playerGameData.map((p) => p.whoPlayerIs);
+    const availableNames = this.names.filter((name) => !namesInUse.includes(name));
+    const index = this.playerGameData.findIndex(p => p.player === playerName);
+    
+    this.playerGameData[index] = {
+      ...this.playerGameData[index],
+      whoPlayerIs: availableNames[Math.floor(availableNames.length * Math.random())],
+    }
+    
+    this.sendActivePlayers();
+  }
+
   finish(winners: string[]) {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     const losers = room?.players.filter(
@@ -98,6 +112,16 @@ class QuemSouEu extends Game {
     if (value === 'game-category-is') {
       this.setCategory(payload) && this.updateNames();
       return;
+    }
+
+    if (value === 'send-me-a-new-name') {
+      const whoAsked = this.runtimeStorage.rooms
+        .get(this.roomCode)
+        ?.players.find((p) => p.socketID === id);
+      
+      if(!whoAsked) return;
+      this.log(`O jogador ${whoAsked?.nickname} pediu para trocar de nome.`);
+      this.getNewNameFor(whoAsked.nickname);
     }
 
     if (value === 'update-me') {
