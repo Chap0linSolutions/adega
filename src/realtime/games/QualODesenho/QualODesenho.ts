@@ -14,6 +14,11 @@ type Winner = {
   time: number;
 }
 
+enum Status {
+  Lost = -1,
+  Disconnected = -100,
+}
+
 class QualODesenho extends Game {
   gameName = 'Qual O Desenho';
   gameType = 'round';
@@ -60,7 +65,7 @@ class QualODesenho extends Game {
           id: player.socketID,
           nickname: player.nickname,
           avatarSeed: player.avatarSeed,
-          guessTime: -1,
+          guessTime: Status.Lost,
         });
       } else {
         this.currentArtist = player.nickname;
@@ -80,7 +85,7 @@ class QualODesenho extends Game {
     
     whoWon.guessTime = guessTime;
     this.playerGameData.sort((a, b) => (a.guessTime - b.guessTime));
-    const whoPlayed = this.playerGameData.filter(p => p.guessTime !== -1);
+    const whoPlayed = this.playerGameData.filter(p => p.guessTime !== Status.Lost);
     if(((this.playerGameData.length - whoPlayed.length) === 0) && !this.resultsHaveBeenSent) return this.finishGame();
     
     return this.io
@@ -92,7 +97,7 @@ class QualODesenho extends Game {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return this.log('a sala desse jogo não existe mais (wtf?)');
     const hasWinners = this.playerGameData.filter(p => p.guessTime >= 0).length > 0;
-    let losers = this.playerGameData.filter(p => p.guessTime === -1);
+    let losers = this.playerGameData.filter(p => p.guessTime === Status.Lost);
 
     if(!hasWinners && losers && losers.length > 0){
       this.log(`Nenhum dos que conseguiu jogar acertou. O jogador da vez (${this.currentArtist}) bebe.`);
@@ -168,7 +173,7 @@ class QualODesenho extends Game {
     const whoLeft = room.disconnectedPlayers.find((p) => p.socketID === id);
     if(!whoLeft) return;
     const player = this.playerGameData.find(p => whoLeft.nickname === p.nickname);
-    player && this.updateWinners(player.nickname, -100);
+    player && this.updateWinners(player.nickname, Status.Disconnected);
     this.log(`${whoLeft.nickname} desconectou-se e não poderá mais participar desta rodada.`);
   }
 }
