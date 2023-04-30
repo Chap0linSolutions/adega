@@ -314,7 +314,7 @@ class SocketConnection {
             this.updateTurn(targetRoom);
             const currentTurnName = getTurn(targetRoom);
             this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
-            if(room[1].currentGame.gameName !== 'Quem Sou Eu'){
+            if((room[1].currentGame.gameName !== 'Quem Sou Eu') && (room[1].currentGame.gameType !== 'simple')){
               handleMoving(this.io, targetRoom, '/SelectNextGame');
             } else {
               this.io.to(targetRoom).emit('original-player-is-down');
