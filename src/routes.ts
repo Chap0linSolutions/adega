@@ -18,17 +18,10 @@ routes.get('/', (req, res) => {
 routes.put('/create', roomAccessController.createRoom);
 routes.get('/check', roomAccessController.checkRoom);
 
-
 routes.get('/example', exampleController.index);
 
-routes.get(
-  '/nickname',
-  roomPlayerNameController.checkNameAvailabiliy
-);
+routes.get('/nickname', roomPlayerNameController.checkNameAvailabiliy);
 
-routes.get(
-  '/returning',
-  roomAccessController.checkIfUserWasThere
-);
+routes.get('/returning', roomAccessController.checkIfUserWasThere);
 
 export default routes;

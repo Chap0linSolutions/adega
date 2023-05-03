@@ -6,9 +6,9 @@ import { Server } from 'socket.io';
 import routes from './routes';
 import realtime from './realtime';
 
-if(process.argv[2]){
+if (process.argv[2]) {
   const PORT = Number(process.argv[2]);
-  if(Number.isNaN(PORT)){
+  if (Number.isNaN(PORT)) {
     console.log('Porta especificada inválida.');
     process.exit(0);
   } else {
@@ -22,10 +22,8 @@ if(process.argv[2]){
     realtime(io);
 
     server.listen(PORT, () => {
-      console.log(
-        'A aplicação está rodando em http://localhost:' + PORT
-      );
-    });   
+      console.log('A aplicação está rodando em http://localhost:' + PORT);
+    });
   }
 } else {
   console.log('É preciso especificar a porta em que o servidor vai rodar.');

@@ -20,11 +20,9 @@ export default class RoomAccessController {
     const activeRooms = Store.getInstance().rooms;
     const roomCode = req.query.room;
     console.log('Verificação de existência da sala de código', roomCode);
-    if ((typeof roomCode === 'string') && (activeRooms.has(roomCode))) {
-      console.log('A sala existe.');
+    if (typeof roomCode === 'string' && activeRooms.has(roomCode)) {
       res.status(200).send('Entrando na sala ' + roomCode + '.');
     } else {
-      console.log('A sala não existe.');
       res.status(404).send();
     }
   }
@@ -33,14 +31,12 @@ export default class RoomAccessController {
     const activeRooms = Store.getInstance().rooms;
     const roomCode = req.query.room;
     console.log('Tentativa de criar sala de código', roomCode);
-    if((typeof roomCode === 'string') && (!activeRooms.has(roomCode))){
-      console.log('Criação bem-sucedida.');
+    if (typeof roomCode === 'string' && !activeRooms.has(roomCode)) {
       activeRooms.set(roomCode, Store.emptyRoom());
       res.status(200).send(roomCode);
     } else {
-      console.log('Erro ao criar.');
       res.status(400).send();
-    }    
+    }
   }
 
   async checkIfUserWasThere(req: Request, res: Response) {
@@ -48,7 +44,7 @@ export default class RoomAccessController {
     console.log(
       `Sala ${room} - verificando se '${nickname}' estava na sala previamente... `
     );
-    if(typeof room !== 'string') return res.status(400).send('Erro de query.');
+    if (typeof room !== 'string') return res.status(400).send('Erro de query.');
     const roomCode = Store.getInstance().rooms.get(room);
     if (roomCode) {
       const userWasThere = roomCode.disconnectedPlayers
@@ -67,49 +63,10 @@ export default class RoomAccessController {
   }
 }
 
+// this.purgeEmptyOldRooms();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // this.purgeEmptyOldRooms();
-
-    // let newRoomCode = '';
-    // do {
-    //   newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    // } while (activeRooms.has(newRoomCode));
-    // activeRooms.set(newRoomCode, Store.emptyRoom());
+// let newRoomCode = '';
+// do {
+//   newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+// } while (activeRooms.has(newRoomCode));
+// activeRooms.set(newRoomCode, Store.emptyRoom());
