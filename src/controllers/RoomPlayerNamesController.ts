@@ -3,15 +3,15 @@ import Store from '../realtime/store';
 
 export default class RoomPlayerNameController {
   async checkNameAvailabiliy(req: Request, res: Response) {
-    const { roomCode, userName } = req.params;
+    const { room, nickname } = req.query;
     console.log(
-      `Sala ${roomCode} - verificando se '${userName}' está disponível... `
+      `Sala ${room} - verificando se '${nickname}' está disponível... `
     );
-
-    const currentPlayersInRoom = Store.getInstance().rooms.get(roomCode);
+    if(typeof room !== 'string') return res.status(400).send('Erro de query.');
+    const currentPlayersInRoom = Store.getInstance().rooms.get(room);
     if (currentPlayersInRoom != undefined) {
       const nameInUse = currentPlayersInRoom.players.find(
-        (player) => player.nickname === userName
+        (player) => player.nickname === nickname
       );
 
       if (nameInUse) {
