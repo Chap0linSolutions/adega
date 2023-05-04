@@ -30,3 +30,25 @@ npm run test
 npm run build
 npm start
 ```
+
+## Criando Migrations
+
+```
+npx knex migrate:make <migration_name>
+```
+
+## Executando Migrations
+```
+npm run knex:migrate
+```
+Para prod usar: ```$env:NODE_ENV="production"``` antes de executar se o ambiente for windows.
+
+No linux rodar: 
+```
+NODE_ENV=production npm run knex:migrate
+```
+
+## Rollback Migrations
+```
+npm run knex:migrate:rollback
+```
