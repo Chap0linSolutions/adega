@@ -62,11 +62,3 @@ export default class RoomAccessController {
     return res.status(410).send('A sala não existe mais.');
   }
 }
-
-// this.purgeEmptyOldRooms();
-
-// let newRoomCode = '';
-// do {
-//   newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-// } while (activeRooms.has(newRoomCode));
-// activeRooms.set(newRoomCode, Store.emptyRoom());
