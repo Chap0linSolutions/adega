@@ -23,7 +23,7 @@ class SimpleCardGame extends Game {
   }
 
   begin() {
-    console.log(`${this.gameName}!`);
+    this.log(`${this.gameName}!`);
     if (this.gameName === 'Who Drank') {
       const room = this.runtimeStorage.rooms.get(this.roomCode);
       if (room) {
@@ -38,7 +38,7 @@ class SimpleCardGame extends Game {
   }
 
   handleDisconnect(id: string): void {
-    console.log(`Player ${id} disconnected`);
+    this.log(`Player ${id} disconnected`);
   }
 
   handleMessage(id: any, value: any): void {
