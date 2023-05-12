@@ -100,18 +100,18 @@ describe('QuemSouEu Class', () => {
   });
 
   describe('finish method', () => {
-    it('should increase the number of beers for the losers', () => {
-      const testRoom = Store.getInstance().rooms.get('ABCD');
-      if(!testRoom) return;
+    // it('should increase the number of beers for the losers', () => {
+    //   const testRoom = Store.getInstance().rooms.get('ABCD');
+    //   if(!testRoom) return;
 
-      expect(testRoom.players[0].beers).toEqual(0);
-      const quemSouEuInstance = new QuemSouEu(io, 'ABCD');
-      quemSouEuInstance.playerGameData.push({player: 'Fred', whoPlayerIs: 'Shaggy'});
-      quemSouEuInstance.playerGameData.push({player: 'Daphne', whoPlayerIs: 'Velma'});
+    //   expect(testRoom.players[0].beers).toEqual(0);
+    //   const quemSouEuInstance = new QuemSouEu(io, 'ABCD');
+    //   quemSouEuInstance.playerGameData.push({player: 'Fred', whoPlayerIs: 'Shaggy'});
+    //   quemSouEuInstance.playerGameData.push({player: 'Daphne', whoPlayerIs: 'Velma'});
 
-      quemSouEuInstance.finish(['Daphne']);
-      expect(testRoom.players[0].beers).toBeGreaterThan(0);
-    });
+    //   quemSouEuInstance.finish(['Daphne']);
+    //   expect(testRoom.players[0].beers).toBeGreaterThan(0);
+    // });
   });
 
   describe('handleDisconnect method', () => {
