@@ -15,6 +15,7 @@ export const gameList = [
   'Jogo do Desafio',
   'Jogo da Verdade',
   'Mestre da Mímica',
+  'Linha do Tempo',
 ];
 
 export type GameListOptionType = {
