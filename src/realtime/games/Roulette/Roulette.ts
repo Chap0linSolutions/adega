@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import Game from '../game';
 import { URL, handleMoving, getTurn } from '../../index';
 
+const MAX_REPEATS = 2;
 class Roulette extends Game {
   playerGameData: any;
   gameName = 'SelectNextGame';
@@ -29,7 +30,7 @@ class Roulette extends Game {
     const gamesList = room.options.gamesList;
     const drawableOptions = gamesList
       .filter((game) => game.name !== room.lastGameName)
-      .filter((game) => game.counter < 4);
+      .filter((game) => game.counter < MAX_REPEATS);
     const gameDrawIndex = Math.floor(Math.random() * drawableOptions.length);
     const gameDraw = drawableOptions[gameDrawIndex];
     room.lastGameName = gameDraw.name;
