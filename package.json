@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest",
+    "coverage": "jest --coverage",
     "lint": "eslint .",
     "format": "prettier --write .",
     "knex:migrate": "knex --knexfile knexfile.ts migrate:latest",

@@ -376,7 +376,6 @@ class SocketConnection {
   }
 
   updateBeers(roomCode: string, playersWhoDrank: player[], qtdBeers?: number) {
-    console.log(roomCode, playersWhoDrank, qtdBeers);
     const room = this.rooms.get(roomCode);
     if (!room) return;
     playersWhoDrank.forEach((player: player) => {
