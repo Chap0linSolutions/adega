@@ -158,8 +158,7 @@ class SocketConnection {
   updateTurn(roomCode: string) {
     const currentTurnIndex = this.getCurrentTurnIndex(roomCode);
     const nextPlayer = this.getNextPlayer(roomCode, currentTurnIndex);
-    console.log('Next player is:');
-    console.log(nextPlayer?.nickname);
+    console.log(`Sala ${roomCode} - O próximo jogador é ${nextPlayer?.nickname}.`);
   }
 
   getCurrentTurnIndex(roomCode: string) {
