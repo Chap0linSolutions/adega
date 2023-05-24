@@ -44,9 +44,9 @@ class SimpleCardGame extends Game {
   handleMessage(id: any, value: any): void {
     if (value === 'end-game') {
       if (this.gameName === 'Who Drank') {
-        return handleMoving(this.io, this.roomCode, '/SelectNextGame');
+        return handleMoving(this.io, this.roomCode, '/proximojogo');
       }
-      return handleMoving(this.io, this.roomCode, '/WhoDrank');
+      return handleMoving(this.io, this.roomCode, '/quembebeu');
     }
   }
 }
