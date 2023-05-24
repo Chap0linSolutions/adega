@@ -280,7 +280,8 @@ class SocketConnection {
             ongoingGame.gameName === 'Bang Bang' ||
             ongoingGame.gameName === 'Titanic' ||
             ongoingGame.gameName === 'Mestre da Mímica' ||
-            ongoingGame.gameName === 'Qual O Desenho'
+            ongoingGame.gameName === 'Qual O Desenho' ||
+            ongoingGame.gameName === 'Linha do Tempo'
           ) {
             const wasPlaying = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname

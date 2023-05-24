@@ -1,18 +1,18 @@
 import { Server } from 'socket.io';
 import Game from '../game';
 import { handleMoving } from '../..';
-import { player } from '../../store';
+import { questions, Question } from './questions';
 
 type gameData = {
-  player: player,
-  guess: string | number | undefined,
+  nickname: string,
+  guess: number | undefined,
 }
 
 type Results = {
-  answer: string | number,
+  answer: number,
   guesses: {
     player: string,
-    guess: string | number | undefined,
+    guess: number | undefined,
   }[]
 }
 
@@ -22,16 +22,20 @@ enum Status {
 }
 
 class LinhaDoTempo extends Game {
-  gameName = 'Linha do tempo';
+  gameName = 'Linha do Tempo';
   gameType = 'round';
   playerGameData: gameData[];
   hasSentResults: boolean;
+  question: string | undefined;
+  answer: number | undefined;
 
   constructor(io: Server, room: string) {
     super(io, room);
     this.playerGameData = [];
     this.roomCode = room;
     this.hasSentResults = false;
+    this.question = undefined;
+    this.answer = undefined;
   }
 
   log(message: string) {
@@ -43,21 +47,21 @@ class LinhaDoTempo extends Game {
     if(!room) return;
 
     this.playerGameData = room.players.map(p => ({
-      player: p,
+      nickname: p.nickname,
       guess: undefined,
     }));
 
-    this.log(`Jogo iniciado. ${this.playerGameData.length} pessoas estão jogando.`)
+    this.log(`Jogo iniciado. ${this.playerGameData.length} pessoas estão jogando.`);
   }
 
-  handleGuess(name: string, guess: string | number){
+  handleGuess(name: string, guess: number){
     const who = this.playerGameData
       .filter(p => p.guess !== -1)
-      .find(p => p.player.nickname === name);
+      .find(p => p.nickname === name);
 
     if(!who) return this.log(`O jogador ${name} não está no jogo.`);
     who.guess = guess;
-    this.log(`Chute do jogador ${who.player.nickname}: ${who.guess}`);
+    this.log(`Chute do jogador ${who.nickname}: ${who.guess}`);
     this.checkForGameConclusion();
   }
 
@@ -67,43 +71,61 @@ class LinhaDoTempo extends Game {
     this.finish();
   }
 
-  timesUp(){
-    this.playerGameData.forEach(p => {
-      if(!p.guess){
-        p.guess = Status.TIMESUP;
-      }
-    })
-
-    const whoMissed = this.playerGameData.filter(p => p.guess === Status.TIMESUP);
-    if(whoMissed.length > 0) this.log(
-      `Os seguintes jogadores não jogaram a tempo: ${whoMissed.map(w => w.player.nickname)}`
-    ); this.log('Acabou o tempo!');
-    this.finish();
-  }
-
   finish(){
-    const answer: Results = {
-      answer: '1850',
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    const ans = this.answer;
+    if(!room || !ans) return;
+
+    const orderedGuesses = this.playerGameData
+      .filter(p => p.guess !== Status.DISCONNECTED)
+      .map(p => ((p.guess)                                            //por algum motivo ele acha que p.guess pode ser undefined aqui (o que é impossível neste ponto do código). O condicional contorna isso.
+        ? {...p, diff: Math.abs(p.guess - ans)}
+        : {...p, diff: 100000}                                        //esse resultado nunca deve acontecer, isso só está aqui por causa do lint 
+      ))                                                 
+      .sort((a, b) => a.diff - b.diff);
+    console.log(`Sala ${this.roomCode} - chutes:`, orderedGuesses);
+
+    if(orderedGuesses.length === 0) return;
+    const whoDrinks = orderedGuesses.filter(p => p.diff !== orderedGuesses[0].diff);
+    const drinkAmount = (orderedGuesses[0].diff === 0)? 2 : 1;
+
+    whoDrinks.forEach(p => {
+      const player = room.players.find(pl => pl.nickname === p.nickname);
+      if(player){
+        player.beers += drinkAmount;
+      } else {
+        const disconnectedPlayer = room.disconnectedPlayers.find(pl => pl.nickname === p.nickname);
+        if(disconnectedPlayer){
+          disconnectedPlayer.beers += drinkAmount;
+        } else {
+          this.log(`O jogador ${p.nickname} não está nem conectado nem desconectado da partida (wtf?)`);
+        }
+      }
+    });
+
+    const results: Results = {
+      answer: ans,
       guesses: this.playerGameData.map(p => ({
-        player: p.player.nickname,
+        player: p.nickname,
         guess: p.guess,
       }))
     }
-    this.io.to(this.roomCode).emit('results', JSON.stringify(answer));
+
+    this.io.to(this.roomCode).emit('results', JSON.stringify(results));
     this.hasSentResults = true;
   }
 
-  getPhraseAndOptions(){
-    return {
-      phrase: 'EM QUE ANO... foi inventada a lâmpada incandescente?',
-      options: ['1840', '1850', '1860', '1870'],
-    }
+  getQuestion(){
+    if(this.question || this.answer) return;
+    const question = questions.sort(() => 0.5 - Math.random()).at(0);
+    this.question = question?.q;
+    this.answer = question?.a;
   }
 
   handleMessage(id: any, value: any, payload: any): void {
-    if (value === 'phrase-and-options') {
-      const answer = this.getPhraseAndOptions();
-      this.io.to(this.roomCode).emit('phrase-and-options', JSON.stringify(answer));
+    if (value === 'question-is') {
+      this.getQuestion();
+      this.io.to(this.roomCode).emit('question-is', this.question);
       return;
     }
     if (value === 'start-game') {
@@ -113,9 +135,6 @@ class LinhaDoTempo extends Game {
     if (value === 'my-guess-is'){
       const {player, guess} = JSON.parse(payload); 
       return this.handleGuess(player, guess);
-    }
-    if (value === 'times-up'){
-      return this.timesUp();
     }
   }
 
@@ -129,10 +148,10 @@ class LinhaDoTempo extends Game {
       (p) => p.socketID === id
     )?.nickname;
 
-    const thisGamePlayer = this.playerGameData.filter(p => p.player.nickname === disconnectedPlayerName);
+    const thisGamePlayer = this.playerGameData.filter(p => p.nickname === disconnectedPlayerName);
     if(!thisGamePlayer) return;
 
-    this.log(`O jogador ${thisGamePlayer[0].player.nickname} desconectou-se e não poderá mais jogar nesta rodada.`);
+    this.log(`O jogador ${thisGamePlayer[0].nickname} desconectou-se e não poderá mais jogar nesta rodada.`);
     thisGamePlayer[0].guess = Status.DISCONNECTED;
     this.checkForGameConclusion();
   }
