@@ -315,7 +315,7 @@ class SocketConnection {
             const currentTurnName = getTurn(targetRoom);
             this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
             if((room[1].currentGame.gameName !== 'Quem Sou Eu') && (room[1].currentGame.gameType !== 'simple')){
-              handleMoving(this.io, targetRoom, '/proximojogo');
+              handleMoving(this.io, targetRoom, '/roleta');
             } else {
               this.io.to(targetRoom).emit('original-player-is-down');
             }
@@ -475,7 +475,7 @@ export const handleMoving = (
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
   if (!currentRoom) return;
-  if (destination === '/proximojogo') {
+  if (destination === '/roleta') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
   } else if (destination === '/quembebeu') {
     runtimeStorage.startGameOnRoom(roomCode, 'Who Drank', io);
