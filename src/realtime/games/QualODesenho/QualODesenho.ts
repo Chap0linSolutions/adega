@@ -97,7 +97,7 @@ class QualODesenho extends Game {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
     if(!room) return this.log('a sala desse jogo não existe mais (wtf?)');
     const hasWinners = this.playerGameData.filter(p => p.guessTime >= 0).length > 0;
-    let losers = this.playerGameData.filter(p => p.guessTime === Status.Lost);
+    const losers = this.playerGameData.filter(p => p.guessTime === Status.Lost);
 
     if(!hasWinners && losers && losers.length > 0){
       this.log(`Nenhum dos que conseguiu jogar acertou. O jogador da vez (${this.currentArtist}) bebe.`);

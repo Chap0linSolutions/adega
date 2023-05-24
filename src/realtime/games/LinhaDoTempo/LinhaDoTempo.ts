@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import Game from '../game';
 import { handleMoving } from '../..';
-import { questions, Question } from './questions';
+import { questions } from './questions';
 
 type gameData = {
   nickname: string,
