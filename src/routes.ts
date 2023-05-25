@@ -15,19 +15,13 @@ routes.get('/', (req, res) => {
   res.send('Bem vindo à adega!');
 });
 
-routes.get('/roomCode/:code', roomAccessController.joinRoom);
-routes.put('/createRoom', roomAccessController.createRoom);
+routes.put('/create', roomAccessController.createRoom);
+routes.get('/check', roomAccessController.checkRoom);
 
 routes.get('/example', exampleController.index);
 
-routes.get(
-  '/nicknameCheck/:roomCode/:userName',
-  roomPlayerNameController.checkNameAvailabiliy
-);
+routes.get('/nickname', roomPlayerNameController.checkNameAvailabiliy);
 
-routes.get(
-  '/returningUser/:roomCode/:userName/:avatarSeed',
-  roomAccessController.checkIfUserWasThere
-);
+routes.get('/returning', roomAccessController.checkIfUserWasThere);
 
 export default routes;
