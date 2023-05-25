@@ -85,7 +85,7 @@ class EuNunca extends Game {
 
   handleMessage(id: any, value: any): void {
     if (value === 'end-game') {
-      return handleMoving(this.io, this.roomCode, '/WhoDrank');
+      return handleMoving(this.io, this.roomCode, '/quembebeu');
     }
     if (value === 'eu-nunca-suggestions') {
       const suggestions = EuNunca.getStandardSuggestions();
