@@ -5,8 +5,8 @@ import { URL, handleMoving, getTurn } from '../../index';
 const MAX_REPEATS = 2;
 class Roulette extends Game {
   playerGameData: any;
-  gameName = 'SelectNextGame';
-  gameType = 'SelectNextGame';
+  gameName = 'Roleta';
+  gameType = 'Roulette';
 
   constructor(io: Server, room: string) {
     super(io, room);

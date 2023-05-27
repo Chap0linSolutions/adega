@@ -264,13 +264,13 @@ class SocketConnection {
       if (returningPlayer) {
         const ongoingGame = currentRoom.currentGame;
         if (ongoingGame) {
-          if (ongoingGame.gameName === 'Who Drank') {
+          if (ongoingGame.gameName === 'Quem Bebeu') {
             const canGetBack = ongoingGame.playerGameData.find(
               (p: player) => p.nickname === npd.nickname
             );
             if (canGetBack) {
               console.log(
-                `Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`
+                `Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Quem Bebeu'.`
               );
               return this.socket.emit('room-is-moving-to', '/quembebeu');
             }
@@ -476,7 +476,7 @@ export const handleMoving = (
   if (destination === '/roleta') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
   } else if (destination === '/quembebeu') {
-    runtimeStorage.startGameOnRoom(roomCode, 'Who Drank', io);
+    runtimeStorage.startGameOnRoom(roomCode, 'Quem Bebeu', io);
   } else if (destination === '/saguao') {
     console.log(
       `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
