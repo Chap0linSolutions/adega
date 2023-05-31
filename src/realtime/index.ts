@@ -158,8 +158,7 @@ class SocketConnection {
   updateTurn(roomCode: string) {
     const currentTurnIndex = this.getCurrentTurnIndex(roomCode);
     const nextPlayer = this.getNextPlayer(roomCode, currentTurnIndex);
-    console.log('Next player is:');
-    console.log(nextPlayer?.nickname);
+    console.log(`Sala ${roomCode} - O próximo jogador é ${nextPlayer?.nickname}.`);
   }
 
   getCurrentTurnIndex(roomCode: string) {
@@ -273,7 +272,7 @@ class SocketConnection {
               console.log(
                 `Sala ${npd.roomCode} - ${npd.nickname} pode voltar para a tela 'Who Drank'.`
               );
-              return this.socket.emit('room-is-moving-to', '/WhoDrank');
+              return this.socket.emit('room-is-moving-to', '/quembebeu');
             }
           } else if (
             ongoingGame.gameName === 'O Escolhido' ||
@@ -316,7 +315,7 @@ class SocketConnection {
             const currentTurnName = getTurn(targetRoom);
             this.io.to(targetRoom).emit('player-turn-is', currentTurnName);
             if((room[1].currentGame.gameName !== 'Quem Sou Eu') && (room[1].currentGame.gameType !== 'simple')){
-              handleMoving(this.io, targetRoom, '/SelectNextGame');
+              handleMoving(this.io, targetRoom, '/roleta');
             } else {
               this.io.to(targetRoom).emit('original-player-is-down');
             }
@@ -361,7 +360,7 @@ class SocketConnection {
       console.log(
         'Não é possível jogar com apenas uma pessoa. Voltando para o lobby.'
       );
-      return handleMoving(this.io, targetRoom, '/Lobby');
+      return handleMoving(this.io, targetRoom, '/saguao');
     }
 
     this.rooms.get(targetRoom)?.currentGame?.handleDisconnect(this.socket.id);
@@ -440,6 +439,7 @@ export default realtime;
 
 export const URL = (input: string) => {
   const output = input
+    .toLowerCase()
     .replace('', '/') //insere a barra
     .replace(/ /g, '') //remove espaços, acentos e caracteres especiais
     .replace(/,/g, '')
@@ -449,7 +449,7 @@ export const URL = (input: string) => {
     .replace(/é/g, 'e')
     .replace(/í/g, 'i')
     .replace(/ó/g, 'o')
-    .replace(/ô/g, 'o')
+    .replace(/ô/g, 'o');
   return output;
 };
 
@@ -474,11 +474,11 @@ export const handleMoving = (
   const runtimeStorage = Store.getInstance();
   const currentRoom = runtimeStorage.rooms.get(roomCode);
   if (!currentRoom) return;
-  if (destination === '/SelectNextGame') {
+  if (destination === '/roleta') {
     runtimeStorage.startGameOnRoom(roomCode, 'Roulette', io);
-  } else if (destination === '/WhoDrank') {
+  } else if (destination === '/quembebeu') {
     runtimeStorage.startGameOnRoom(roomCode, 'Who Drank', io);
-  } else if (destination === '/Lobby') {
+  } else if (destination === '/saguao') {
     console.log(
       `Sala ${roomCode} - Voltando ao Lobby. Jogo redefinido para null.`
     );

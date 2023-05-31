@@ -12,7 +12,7 @@ type guessingPlayer = {
 type Winner = {
   nickname: string;
   time: number;
-}
+};
 
 enum Status {
   Lost = -1,
@@ -45,8 +45,12 @@ class QualODesenho extends Game {
     const names: string[] = [];
     categories.forEach((content, category) => names.push(category));
     names.sort(() => 0.5 - Math.random());
-    const option1 = categories.get(names[0])?.sort(() => 0.5 - Math.random())[0];
-    const option2 = categories.get(names[1])?.sort(() => 0.5 - Math.random())[0];
+    const option1 = categories
+      .get(names[0])
+      ?.sort(() => 0.5 - Math.random())[0];
+    const option2 = categories
+      .get(names[1])
+      ?.sort(() => 0.5 - Math.random())[0];
     return [option1, option2];
   }
 
@@ -78,16 +82,22 @@ class QualODesenho extends Game {
   }
 
   updateWinners(playerName: string, guessTime: number) {
-    (guessTime > 0) && this.log(`${playerName} acertou em ${guessTime}`);
-    
-    const whoWon = this.playerGameData.find(p => p.nickname === playerName);
-    if(!whoWon) return;
-    
+    guessTime > 0 && this.log(`${playerName} acertou em ${guessTime}`);
+
+    const whoWon = this.playerGameData.find((p) => p.nickname === playerName);
+    if (!whoWon) return;
+
     whoWon.guessTime = guessTime;
-    this.playerGameData.sort((a, b) => (a.guessTime - b.guessTime));
-    const whoPlayed = this.playerGameData.filter(p => p.guessTime !== Status.Lost);
-    if(((this.playerGameData.length - whoPlayed.length) === 0) && !this.resultsHaveBeenSent) return this.finishGame();
-    
+    this.playerGameData.sort((a, b) => a.guessTime - b.guessTime);
+    const whoPlayed = this.playerGameData.filter(
+      (p) => p.guessTime !== Status.Lost
+    );
+    if (
+      this.playerGameData.length - whoPlayed.length === 0 &&
+      !this.resultsHaveBeenSent
+    )
+      return this.finishGame();
+
     return this.io
       .to(this.roomCode)
       .emit('updated-winners', JSON.stringify(whoPlayed));
@@ -95,29 +105,40 @@ class QualODesenho extends Game {
 
   finishGame() {
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    if(!room) return this.log('a sala desse jogo não existe mais (wtf?)');
-    const hasWinners = this.playerGameData.filter(p => p.guessTime >= 0).length > 0;
-    const losers = this.playerGameData.filter(p => p.guessTime === Status.Lost);
+    if (!room) return this.log('a sala desse jogo não existe mais (wtf?)');
+    const hasWinners =
+      this.playerGameData.filter((p) => p.guessTime >= 0).length > 0;
+    const losers = this.playerGameData.filter(
+      (p) => p.guessTime === Status.Lost
+    );
 
-    if(!hasWinners && losers && losers.length > 0){
-      this.log(`Nenhum dos que conseguiu jogar acertou. O jogador da vez (${this.currentArtist}) bebe.`);
-      const artist = room.players.find(p => p.nickname === this.currentArtist);
+    if (!hasWinners && losers && losers.length > 0) {
+      this.log(
+        `Nenhum dos que conseguiu jogar acertou. O jogador da vez (${this.currentArtist}) bebe.`
+      );
+      const artist = room.players.find(
+        (p) => p.nickname === this.currentArtist
+      );
       artist && (artist.beers += 1);
     }
 
-    hasWinners && losers && losers.forEach(loser => {
-      try{
-        let player = room.players.find(p => p.nickname === loser.nickname);
-        if(player){
-          player.beers += 1;
-        } else {
-          player = room.disconnectedPlayers.find(p => p.nickname === loser.nickname);
-          player && (player.beers += 1);
+    hasWinners &&
+      losers &&
+      losers.forEach((loser) => {
+        try {
+          let player = room.players.find((p) => p.nickname === loser.nickname);
+          if (player) {
+            player.beers += 1;
+          } else {
+            player = room.disconnectedPlayers.find(
+              (p) => p.nickname === loser.nickname
+            );
+            player && (player.beers += 1);
+          }
+        } catch (e) {
+          this.log(`Não foi possível encontrar o jogador ${loser.nickname}.`);
         }
-      } catch (e) {
-        this.log(`Não foi possível encontrar o jogador ${loser.nickname}.`)
-      }
-    })
+      });
 
     this.log(`Jogo encerrado.`);
     this.io
@@ -161,20 +182,24 @@ class QualODesenho extends Game {
     }
 
     if (value === 'times-up') {
-      if(this.resultsHaveBeenSent) return;
+      if (this.resultsHaveBeenSent) return;
       this.finishGame();
     }
   }
 
   handleDisconnect(id: string): void {
-    if(this.resultsHaveBeenSent) return;
+    if (this.resultsHaveBeenSent) return;
     const room = this.runtimeStorage.rooms.get(this.roomCode);
-    if(!room) return;
+    if (!room) return;
     const whoLeft = room.disconnectedPlayers.find((p) => p.socketID === id);
-    if(!whoLeft) return;
-    const player = this.playerGameData.find(p => whoLeft.nickname === p.nickname);
+    if (!whoLeft) return;
+    const player = this.playerGameData.find(
+      (p) => whoLeft.nickname === p.nickname
+    );
     player && this.updateWinners(player.nickname, Status.Disconnected);
-    this.log(`${whoLeft.nickname} desconectou-se e não poderá mais participar desta rodada.`);
+    this.log(
+      `${whoLeft.nickname} desconectou-se e não poderá mais participar desta rodada.`
+    );
   }
 }
 

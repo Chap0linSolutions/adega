@@ -199,7 +199,7 @@ categories.set('Objetos', [
   'Escova',
   'Extintor',
   'Estetoscópio',
-  'Esmalte', 
+  'Esmalte',
   'Faca',
   'Fantoche',
   'Focinheira',
@@ -284,6 +284,5 @@ categories.set('Objetos', [
   'Zarabatana',
   'Zíper',
 ]);
-
 
 export { categories };

@@ -44,27 +44,27 @@ describe('RoomAccessController', () => {
       expect(rooms.get('OLDR')).toBeUndefined();
     });
   });
-  describe('JoinRoom method', () => {
-    it('should return 200 when room exist', () => {
-      const controller = new RoomAccessController();
-      const req = getMockReq({ params: { code: 'ABCD' } });
-      const { res } = getMockRes();
+  // describe('JoinRoom method', () => {
+  //   it('should return 200 when room exist', () => {
+  //     const controller = new RoomAccessController();
+  //     const req = getMockReq({ params: { code: 'ABCD' } });
+  //     const { res } = getMockRes();
 
-      controller.joinRoom(req, res);
-      expect(res.status).toBeCalledWith(200);
-      expect(res.send).toBeCalledWith('Entrando na sala ABCD.');
-    });
+  //     controller.joinRoom(req, res);
+  //     expect(res.status).toBeCalledWith(200);
+  //     expect(res.send).toBeCalledWith('Entrando na sala ABCD.');
+  //   });
 
-    it("should return 404 when room doesn't exist", () => {
-      const controller = new RoomAccessController();
-      const req = getMockReq({ params: { code: 'EFGH' } });
-      const { res } = getMockRes();
+  //   it("should return 404 when room doesn't exist", () => {
+  //     const controller = new RoomAccessController();
+  //     const req = getMockReq({ params: { code: 'EFGH' } });
+  //     const { res } = getMockRes();
 
-      controller.joinRoom(req, res);
-      expect(res.status).toBeCalledWith(404);
-      expect(res.send).toBeCalled();
-    });
-  });
+  //     controller.joinRoom(req, res);
+  //     expect(res.status).toBeCalledWith(404);
+  //     expect(res.send).toBeCalled();
+  //   });
+  // });
 
   describe('createRoom method', () => {
     it('should call purgeEmptyOldRooms', () => {

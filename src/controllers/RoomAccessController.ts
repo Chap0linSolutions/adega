@@ -16,10 +16,11 @@ export default class RoomAccessController {
     }
   };
 
-  async joinRoom(req: Request, res: Response) {
+  async checkRoom(req: Request, res: Response) {
     const activeRooms = Store.getInstance().rooms;
-    const roomCode = req.params.code;
-    if (activeRooms.has(roomCode)) {
+    const roomCode = req.query.room;
+    console.log('Verificação de existência da sala de código', roomCode);
+    if (typeof roomCode === 'string' && activeRooms.has(roomCode)) {
       res.status(200).send('Entrando na sala ' + roomCode + '.');
     } else {
       res.status(404).send();
@@ -28,28 +29,27 @@ export default class RoomAccessController {
 
   async createRoom(req: Request, res: Response) {
     const activeRooms = Store.getInstance().rooms;
-    // this.purgeEmptyOldRooms();
-
-    let newRoomCode = '';
-    do {
-      newRoomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    } while (activeRooms.has(newRoomCode));
-    activeRooms.set(newRoomCode, Store.emptyRoom());
-
-    res.status(200).send(newRoomCode);
+    const roomCode = req.query.room;
+    console.log('Tentativa de criar sala de código', roomCode);
+    if (typeof roomCode === 'string' && !activeRooms.has(roomCode)) {
+      activeRooms.set(roomCode, Store.emptyRoom());
+      res.status(200).send(roomCode);
+    } else {
+      res.status(400).send();
+    }
   }
 
   async checkIfUserWasThere(req: Request, res: Response) {
-    const { roomCode, userName, avatarSeed } = req.params;
+    const { room, nickname, avatar } = req.query;
     console.log(
-      `Sala ${roomCode} - verificando se '${userName}' estava na sala previamente... `
+      `Sala ${room} - verificando se '${nickname}' estava na sala previamente... `
     );
-
-    const room = Store.getInstance().rooms.get(roomCode);
-    if (room) {
-      const userWasThere = room.disconnectedPlayers
-        .filter((player) => player.nickname === userName)
-        .filter((player) => player.avatarSeed === avatarSeed);
+    if (typeof room !== 'string') return res.status(400).send('Erro de query.');
+    const roomCode = Store.getInstance().rooms.get(room);
+    if (roomCode) {
+      const userWasThere = roomCode.disconnectedPlayers
+        .filter((player) => player.nickname === nickname)
+        .filter((player) => player.avatarSeed === avatar);
 
       if (userWasThere.length > 0) {
         return res
