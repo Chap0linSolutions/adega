@@ -24,7 +24,7 @@ class SimpleCardGame extends Game {
 
   begin() {
     this.log(`${this.gameName}!`);
-    if (this.gameName === 'Who Drank') {
+    if (this.gameName === 'Quem Bebeu') {
       const room = this.runtimeStorage.rooms.get(this.roomCode);
       if (room) {
         this.playerGameData = room.players.map((p) => {
@@ -43,7 +43,7 @@ class SimpleCardGame extends Game {
 
   handleMessage(id: any, value: any): void {
     if (value === 'end-game') {
-      if (this.gameName === 'Who Drank') {
+      if (this.gameName === 'Quem Bebeu') {
         return handleMoving(this.io, this.roomCode, '/roleta');
       }
       return handleMoving(this.io, this.roomCode, '/quembebeu');
