@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import Game from '../game';
-import { handleMoving } from '../..';
+import { handleMoving } from '../../index';
 import { questions } from './questions';
 
 type gameData = {
@@ -140,20 +140,24 @@ class LinhaDoTempo extends Game {
 
 
   handleDisconnect(id: string): void {
+    const room = this.runtimeStorage.rooms.get(this.roomCode);
+    if(!room) return;
     if(this.hasSentResults) return;
-    const disconnectedPlayers = this.runtimeStorage.rooms.get(
-      this.roomCode
-    )?.disconnectedPlayers;
-    const disconnectedPlayerName = disconnectedPlayers?.find(
-      (p) => p.socketID === id
-    )?.nickname;
 
-    const thisGamePlayer = this.playerGameData.filter(p => p.nickname === disconnectedPlayerName);
-    if(!thisGamePlayer) return;
+    try {
+      const disconnectedPlayerName = room.disconnectedPlayers.find(
+        (p) => p.socketID === id
+      )?.nickname;
+    
+      const thisGamePlayer = this.playerGameData.filter(p => p.nickname === disconnectedPlayerName);
+      if(thisGamePlayer.length === 0) return;
 
-    this.log(`O jogador ${thisGamePlayer[0].nickname} desconectou-se e não poderá mais jogar nesta rodada.`);
-    thisGamePlayer[0].guess = Status.DISCONNECTED;
-    this.checkForGameConclusion();
+      this.log(`O jogador ${thisGamePlayer[0].nickname} desconectou-se e não poderá mais jogar nesta rodada.`);
+      thisGamePlayer[0].guess = Status.DISCONNECTED;
+      this.checkForGameConclusion();
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
 
