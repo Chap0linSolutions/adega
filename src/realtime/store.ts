@@ -13,6 +13,7 @@ import { JogoDaVerdade } from './games/JogoDaVerdade/JogoDaVerdade';
 
 import Titanic from './games/Titanic';
 import MestreDaMimica from './games/MestreDaMimica';
+import LinhaDoTempo from './games/LinhaDoTempo';
 export interface player {
   //todo jogador ao entrar no lobby terá estas infos associadas
   playerID: number;
@@ -92,6 +93,9 @@ class Store {
         break;
       case 'Titanic':
         newGame = new Titanic(io, roomCode);
+        break;
+      case 'Linha do Tempo':
+        newGame = new LinhaDoTempo(io, roomCode);
         break;
       default:
         newGame = new SimpleCardGame(io, roomCode, gameName);
