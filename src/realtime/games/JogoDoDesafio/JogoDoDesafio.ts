@@ -45,6 +45,18 @@ class JogoDoDesafio extends Game {
     'Coloque um fone com música alta, enquanto as outras pessoas no grupo fazem três perguntas que devem ser respondidas com “sim” ou “não”.',
     'Comente a primeira foto de uma pessoa que você segue no Instagram (não vale pessoas famosas).',
     'Ligue para alguém que conhece e comece a pedir desculpas sem dizer o motivo.',
+    'Engula um cubo de gelo em menos de um minuto.',
+    'Seja o garçom da roda e abasteça o copo de todo mundo.',
+    'Imite algum vilão de filme',
+    'Imite o Michael Jackson por 30 segundos. Rusbé',
+    'Fale somente por mímica até ser o jogador da vez de novo.',
+    `Abrace alguém de fora do jogo com uma expressão de pena e dizendo somente 'eu sei, eu sei'. Não pode falar nada além disso!`,
+    'Troque sua foto do Whatsapp pela de um objeto qualquer da sua galeria',
+    'Imite um boneco de posto por um minuto',
+    'Vire o que restou de bebida no seu copo e reabasteça.',
+    'Faça 10 flexões',
+    'Você só pode Falar susurrando no ouvido do coleguinha ao lado por 2 minutos. Ele será o seu intérprete para o resto do grupo neste período.',    
+    `Até o fim do jogo, você deve falar 'eu quero um cigarro' poeticamente toda vez que alguém espirrar ou tossir.`,
   ];
 
   constructor(io: Server, room: string) {
