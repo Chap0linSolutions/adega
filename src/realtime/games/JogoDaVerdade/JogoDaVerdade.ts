@@ -130,6 +130,17 @@ class JogoDaVerdade extends Game {
     'Você tem medo de dar a sua opinião?',
     'Preferiria viver um amor de novela ou um amor simples?',
     'Com quem você costuma se comparar de vez em quando?',
+    'Qual é a mania mais nojenta que você tem?',
+    'Quando foi a última vez que você fez xixi na cama?',
+    'Já passou alguma vergona no cinema?',
+    'Você olha a privada antes de dar descarga?',
+    'Fale de algo simples de fazer que todo mundo sabe, menos você.',
+    'Quando foi a última vez que você não conseguiu chegar a tempo no banheiro?',
+    'Qual verdade sua os seus pais não podem saber de jeito nenhum?',
+    'Já mentiu para alguém para vencer uma discussão?',
+    'Qual foi seu recorde pessoal de ficadas em um dia?',
+    'Quem da roda é a pessoa mais sem noção?',
+    'Já teve de fingir que estava de boa com alguém, mas por dentro era só xingamento? Quem?',
   ];
 
   constructor(io: Server, room: string) {
